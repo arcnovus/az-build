@@ -25,6 +25,12 @@ param locationCode string = 'cac'
 @description('The instance number for the subscription')
 param instanceNumber string
 
+@description('The owner of the subscription')
+param owner string
+
+@description('What manages this subscription (e.g., Bicep, Terraform)')
+param managedBy string = 'Bicep'
+
 // Construct subscription alias name following naming convention: subcr-<purpose>-<environment>-<locationcode>-<instance number>
 var subscriptionAliasName = 'subcr-${purpose}-${environment}-${locationCode}-${instanceNumber}'
 
@@ -40,6 +46,12 @@ module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
     subscriptionManagementGroupAssociationEnabled: true
     subscriptionAliasEnabled: true
     virtualNetworkEnabled: false
+    subscriptionTags: {
+      purpose: purpose
+      environment: environment
+      owner: owner
+      managedBy: managedBy
+    }
   }
 }
 

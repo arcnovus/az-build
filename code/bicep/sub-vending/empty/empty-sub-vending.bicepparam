@@ -15,3 +15,7 @@ param environment = 'dev'
 param locationCode = 'cac'
 
 param instanceNumber = '001'
+
+param owner = 'example-owner'
+
+param managedBy = 'Bicep'

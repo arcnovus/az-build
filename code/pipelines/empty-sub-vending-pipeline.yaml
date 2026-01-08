@@ -44,6 +44,16 @@ parameters:
     default: ""
     values:
       - $(azureTenantId)
+      - "mg-platform"
+      - "mg-landing-zone"
+      - "mg-sandbox"
+      - "mg-decommissioned"
+      - "mg-management"
+      - "mg-connectivity"
+      - "mg-corp-prod"
+      - "mg-corp-non-prod"
+      - "mg-online-prod"
+      - "mg-online-non-prod"
   - name: billingScope
     displayName: "Billing Scope (optional)"
     type: string
@@ -55,19 +65,27 @@ parameters:
     values:
       - Production
       - DevTest
-  - name: skipValidation
-    displayName: "Skip Validation Stage"
-    type: boolean
-    default: false
-  - name: skipWhatIf
-    displayName: "Skip What-If Stage"
-    type: boolean
-    default: false
+  - name: owner
+    displayName: "Owner"
+    type: string
+    default: ""
+  - name: managedBy
+    displayName: "Managed By"
+    type: string
+    default: "Bicep"
+  - name: deploymentStage
+    displayName: "Pipeline Stage to Run"
+    type: string
+    default: "WhatIf"
+    values:
+      - Validation
+      - WhatIf
+      - Deploy
 
 stages:
   - stage: Validate
     displayName: "Validate Bicep Template"
-    condition: eq('${{ parameters.skipValidation }}', false)
+    # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
       - job: ValidateBicep
         displayName: "Validate Bicep"
@@ -85,9 +103,6 @@ stages:
                 if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
                   PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
                 fi
-                if [ -n "${{ parameters.subscriptionAliasName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionAliasName='${{ parameters.subscriptionAliasName }}'"
-                fi
                 if [ -n "${{ parameters.managementGroupId }}" ]; then
                   PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
                 fi
@@ -96,6 +111,24 @@ stages:
                 fi
                 if [ -n "${{ parameters.workload }}" ]; then
                   PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                fi
+                if [ -n "${{ parameters.purpose }}" ]; then
+                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                fi
+                if [ -n "${{ parameters.environment }}" ]; then
+                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                fi
+                if [ -n "${{ parameters.locationCode }}" ]; then
+                  PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
+                fi
+                if [ -n "${{ parameters.instanceNumber }}" ]; then
+                  PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
+                fi
+                if [ -n "${{ parameters.owner }}" ]; then
+                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                fi
+                if [ -n "${{ parameters.managedBy }}" ]; then
+                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
 
                 az deployment mg validate \
@@ -109,13 +142,11 @@ stages:
     displayName: "What-If Analysis"
     dependsOn:
       - Validate
+    # Runs for: WhatIf, Deploy
     condition: |
       and(
-        or(
-          eq(dependencies.Validate.result, 'Succeeded'),
-          eq(dependencies.Validate.result, 'Skipped')
-        ),
-        eq('${{ parameters.skipWhatIf }}', false)
+        eq(dependencies.Validate.result, 'Succeeded'),
+        in('${{ parameters.deploymentStage }}', 'WhatIf', 'Deploy')
       )
     jobs:
       - job: WhatIfAnalysis
@@ -155,6 +186,12 @@ stages:
                 if [ -n "${{ parameters.workload }}" ]; then
                   PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
                 fi
+                if [ -n "${{ parameters.owner }}" ]; then
+                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                fi
+                if [ -n "${{ parameters.managedBy }}" ]; then
+                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                fi
 
                 az deployment mg what-if \
                   --management-group-id $(azureTenantId) \
@@ -168,16 +205,12 @@ stages:
     dependsOn:
       - Validate
       - WhatIf
+    # Runs for: Deploy only
     condition: |
       and(
-        or(
-          eq(dependencies.Validate.result, 'Succeeded'),
-          eq(dependencies.Validate.result, 'Skipped')
-        ),
-        or(
-          eq(dependencies.WhatIf.result, 'Succeeded'),
-          eq(dependencies.WhatIf.result, 'Skipped')
-        )
+        eq(dependencies.Validate.result, 'Succeeded'),
+        in(dependencies.WhatIf.result, 'Succeeded', 'Skipped'),
+        eq('${{ parameters.deploymentStage }}', 'Deploy')
       )
     jobs:
       - deployment: DeploySubscriptionVending
@@ -220,6 +253,12 @@ stages:
                       fi
                       if [ -n "${{ parameters.workload }}" ]; then
                         PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                      fi
+                      if [ -n "${{ parameters.owner }}" ]; then
+                        PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                      fi
+                      if [ -n "${{ parameters.managedBy }}" ]; then
+                        PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                       fi
 
                       az deployment mg create \
