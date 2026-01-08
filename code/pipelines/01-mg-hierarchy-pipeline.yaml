@@ -1,0 +1,89 @@
+# Azure Pipeline to deploy Management Group Hierarchy
+# This pipeline deploys the mg-hierarchy Bicep template at the management group scope
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  - group: common-variables
+  - name: bicepPath
+    value: "code/bicep/mg-hierarchy"
+  - name: templateFile
+    value: "$(bicepPath)/mg-hierarchy.bicep"
+  - name: parametersFile
+    value: "$(bicepPath)/mg-hierarchy.bicepparam"
+  - name: deploymentLocation
+    value: "canadacentral"
+
+stages:
+  - stage: Validate
+    displayName: "Validate Bicep Template"
+    jobs:
+      - job: ValidateBicep
+        displayName: "Validate Bicep"
+        steps:
+          - task: AzureCLI@2
+            displayName: "Validate Management Group Deployment"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az deployment mg validate \
+                  --management-group-id $(azureTenantId) \
+                  --location $(deploymentLocation) \
+                  --template-file $(templateFile) \
+                  --parameters $(parametersFile) \
+                  --parameters tenantRootManagementGroupId=$(azureTenantId)
+
+  - stage: WhatIf
+    displayName: "What-If Analysis"
+    dependsOn: Validate
+    jobs:
+      - job: WhatIfAnalysis
+        displayName: "What-If"
+        steps:
+          - task: AzureCLI@2
+            displayName: "What-If Management Group Deployment"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az deployment mg what-if \
+                  --management-group-id $(azureTenantId) \
+                  --location $(deploymentLocation) \
+                  --template-file $(templateFile) \
+                  --parameters $(parametersFile) \
+                  --parameters tenantRootManagementGroupId=$(azureTenantId)
+
+  - stage: Deploy
+    displayName: "Deploy Management Group Hierarchy"
+    dependsOn: WhatIf
+    jobs:
+      - deployment: DeployMgHierarchy
+        displayName: "Deploy MG Hierarchy"
+        environment: "management-groups"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Deploy Management Group Hierarchy"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      az deployment mg create \
+                        --name 'mg-hierarchy-$(Build.BuildNumber)' \
+                        --management-group-id $(azureTenantId) \
+                        --location $(deploymentLocation) \
+                        --template-file $(templateFile) \
+                        --parameters $(parametersFile) \
+                        --parameters tenantRootManagementGroupId=$(azureTenantId)
