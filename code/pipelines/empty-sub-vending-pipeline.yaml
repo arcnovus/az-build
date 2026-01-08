@@ -22,14 +22,28 @@ parameters:
     displayName: "Subscription Display Name"
     type: string
     default: ""
-  - name: subscriptionAliasName
-    displayName: "Subscription Alias Name"
+  - name: purpose
+    displayName: "Purpose/Project/Workload Name"
+    type: string
+    default: ""
+  - name: environment
+    displayName: "Environment"
+    type: string
+    default: ""
+  - name: locationCode
+    displayName: "Location Code (e.g., cac for canada central)"
+    type: string
+    default: "cac"
+  - name: instanceNumber
+    displayName: "Instance Number (e.g., 001 for the first instance)"
     type: string
     default: ""
   - name: managementGroupId
     displayName: "Management Group ID"
     type: string
     default: ""
+    values:
+      - $(azureTenantId)
   - name: billingScope
     displayName: "Billing Scope (optional)"
     type: string
@@ -120,8 +134,17 @@ stages:
                 if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
                   PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
                 fi
-                if [ -n "${{ parameters.subscriptionAliasName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionAliasName='${{ parameters.subscriptionAliasName }}'"
+                if [ -n "${{ parameters.purpose }}" ]; then
+                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                fi
+                if [ -n "${{ parameters.environment }}" ]; then
+                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                fi
+                if [ -n "${{ parameters.locationCode }}" ]; then
+                  PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
+                fi
+                if [ -n "${{ parameters.instanceNumber }}" ]; then
+                  PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                 fi
                 if [ -n "${{ parameters.managementGroupId }}" ]; then
                   PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
@@ -177,8 +200,17 @@ stages:
                       if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
                         PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
                       fi
-                      if [ -n "${{ parameters.subscriptionAliasName }}" ]; then
-                        PARAMS="$PARAMS --parameters subscriptionAliasName='${{ parameters.subscriptionAliasName }}'"
+                      if [ -n "${{ parameters.purpose }}" ]; then
+                        PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                      fi
+                      if [ -n "${{ parameters.environment }}" ]; then
+                        PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                      fi
+                      if [ -n "${{ parameters.locationCode }}" ]; then
+                        PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
+                      fi
+                      if [ -n "${{ parameters.instanceNumber }}" ]; then
+                        PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                       fi
                       if [ -n "${{ parameters.managementGroupId }}" ]; then
                         PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"

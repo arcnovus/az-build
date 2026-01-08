@@ -13,8 +13,20 @@ param billingScope string = ''
 @allowed(['Production', 'DevTest'])
 param workload string = 'Production'
 
-@description('The subscription alias name')
-param subscriptionAliasName string
+@description('The purpose or project name for the subscription')
+param purpose string
+
+@description('The environment for the subscription (e.g., dev, test, prod)')
+param environment string
+
+@description('The location code for the subscription')
+param locationCode string = 'cac'
+
+@description('The instance number for the subscription')
+param instanceNumber string
+
+// Construct subscription alias name following naming convention: subcr-<purpose>-<environment>-<locationcode>-<instance number>
+var subscriptionAliasName = 'subcr-${purpose}-${environment}-${locationCode}-${instanceNumber}'
 
 // Use AVM sub-vending module to create subscription and assign to management group
 module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
