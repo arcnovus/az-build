@@ -1,0 +1,96 @@
+---
+description: Always use the latest available Azure Verified Module (AVM) when creating Bicep scripts for resources that have an available AVM
+globs: ['**/*.bicep', '**/*.bicepparam']
+alwaysApply: true
+---
+
+# Azure Verified Module (AVM) Usage Rules
+
+When creating or modifying Bicep scripts, you MUST follow these rules for Azure Verified Modules:
+
+## Always Use Azure Verified Modules When Available
+
+1. **Check for AVM Availability**: Before creating custom Bicep code for an Azure resource, check if an Azure Verified Module (AVM) exists for that resource type.
+
+2. **AVM Registry Location**: Azure Verified Modules are published to the public Bicep registry at `br/public:avm/...`
+
+3. **Module Path Structure**: AVM modules follow this structure:
+   - Resource modules: `br/public:avm/res/<resource-type>/<resource-name>:<version>`
+   - Pattern modules: `br/public:avm/ptn/<pattern-type>/<pattern-name>:<version>`
+   - Example: `br/public:avm/res/storage/storage-account:1.0.0`
+
+## Version Selection from version.json
+
+4. **Always Use Latest Version**: When referencing an AVM, you MUST use the latest available version.
+
+5. **Finding the Latest Version**: To determine the latest version:
+   - Navigate to the module's GitHub repository in the Azure/bicep-registry-modules organization
+   - Locate the `version.json` file in the module's directory
+   - Read the version number from the `version.json` file
+   - Use this version in the module reference
+
+6. **Version.json Format**: The `version.json` file typically contains:
+   ```json
+   {
+     "$schema": "https://aka.ms/bicep-registry-module-version-file-schema#",
+     "version": "1.0.0"
+   }
+   ```
+   Extract the `version` field value. Versions always need 3 parts. You may need to add the last part yourself, so if you see 1.0, that becomes 1.0.0. A missing last part always means it should be ".0".
+
+7. **Module Reference Format**: Always use the format:
+   ```bicep
+   module <moduleName> 'br/public:avm/<module-path>:<latest-version-from-version.json>' = {
+     name: '<deployment-name>'
+     params: {
+       // parameters
+     }
+   }
+   ```
+
+## Search Process
+
+8. **When Creating New Bicep Files**:
+   - First, search the Azure Verified Modules repository (https://github.com/Azure/bicep-registry-modules) for an available module
+   - If an AVM exists, use it instead of creating custom code
+   - Check the module's `version.json` file to get the latest version
+   - Reference the module using the latest version from `version.json`
+
+9. **When Updating Existing Bicep Files**:
+   - Review existing module references
+   - Check if newer versions are available by comparing against the `version.json` file
+   - Update to the latest version if a newer one exists
+
+## Examples
+
+**Correct Usage:**
+```bicep
+// Latest version from version.json (e.g., 0.5.0)
+module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
+  name: 'sub-vending-example'
+  params: {
+    subscriptionDisplayName: 'My Subscription'
+    // ... other params
+  }
+}
+```
+
+**Incorrect Usage:**
+```bicep
+// ❌ Using an outdated version
+module subVending 'br/public:avm/ptn/lz/sub-vending:0.3.0' = {
+  // ...
+}
+
+// ❌ Creating custom code when an AVM exists
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  // Custom code instead of using AVM
+}
+```
+
+## Verification
+
+10. **Before Committing**: Verify that:
+    - All AVM references use the latest version from `version.json`
+    - No custom code exists for resources that have available AVMs
+    - Module paths follow the correct AVM structure
