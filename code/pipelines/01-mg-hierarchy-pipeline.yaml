@@ -15,8 +15,6 @@ variables:
     value: "$(bicepPath)/mg-hierarchy.bicep"
   - name: parametersFile
     value: "$(bicepPath)/mg-hierarchy.bicepparam"
-  - name: deploymentLocation
-    value: "canadacentral"
 
 stages:
   - stage: Validate
