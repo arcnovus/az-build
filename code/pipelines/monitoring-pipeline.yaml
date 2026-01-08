@@ -1,6 +1,6 @@
-# Azure Pipeline to deploy Empty Subscription Vending
-# This pipeline deploys the empty-sub-vending Bicep template at the management group scope
-# This pipeline is reusable and can be triggered with parameters
+# Azure Pipeline to deploy Monitoring Infrastructure
+# This pipeline deploys the monitoring Bicep template at the subscription scope
+# Deploys centralized Log Analytics workspace to the monitoring subscription
 
 trigger: none
 pr: none
@@ -11,25 +11,25 @@ pool:
 variables:
   - group: common-variables
   - name: bicepPath
-    value: "code/bicep/sub-vending/empty"
+    value: "code/bicep/monitoring"
   - name: templateFile
-    value: "$(bicepPath)/empty-sub-vending.bicep"
+    value: "$(bicepPath)/monitoring.bicep"
   - name: parametersFile
-    value: "$(bicepPath)/empty-sub-vending.bicepparam"
+    value: "$(bicepPath)/monitoring.bicepparam"
 
 parameters:
-  - name: subscriptionDisplayName
-    displayName: "Subscription Display Name"
+  - name: subscriptionId
+    displayName: "Monitoring Subscription ID"
     type: string
     default: ""
   - name: purpose
-    displayName: "Purpose/Project/Workload Name"
+    displayName: "Purpose"
     type: string
-    default: ""
+    default: "monitoring"
   - name: environment
     displayName: "Environment"
     type: string
-    default: ""
+    default: "live"
     values:
       - nonprod
       - dev
@@ -45,38 +45,19 @@ parameters:
   - name: instanceNumber
     displayName: "Instance Number (e.g., 001 for the first instance)"
     type: string
-    default: ""
-  - name: managementGroupId
-    displayName: "Management Group ID"
+    default: "001"
+  - name: location
+    displayName: "Azure Region"
     type: string
-    default: ""
-    values:
-      - $(azureTenantId)
-      - "mg-platform"
-      - "mg-landing-zone"
-      - "mg-sandbox"
-      - "mg-decommissioned"
-      - "mg-management"
-      - "mg-connectivity"
-      - "mg-corp-prod"
-      - "mg-corp-non-prod"
-      - "mg-online-prod"
-      - "mg-online-non-prod"
-  - name: billingScope
-    displayName: "Billing Scope (optional)"
-    type: string
-    default: ""
-  - name: workload
-    displayName: "Workload Type"
-    type: string
-    default: "Production"
-    values:
-      - Production
-      - DevTest
+    default: "canadacentral"
+  - name: dataRetention
+    displayName: "Data Retention (days)"
+    type: number
+    default: 60
   - name: owner
     displayName: "Owner"
     type: string
-    default: ""
+    default: "platform-team"
   - name: managedBy
     displayName: "Managed By"
     type: string
@@ -101,25 +82,13 @@ stages:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "Validate Subscription Vending Deployment"
+            displayName: "Validate Monitoring Deployment"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
                 PARAMS=""
-                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                fi
-                if [ -n "${{ parameters.managementGroupId }}" ]; then
-                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
-                fi
-                if [ -n "${{ parameters.billingScope }}" ]; then
-                  PARAMS="$PARAMS --parameters billingScope='${{ parameters.billingScope }}'"
-                fi
-                if [ -n "${{ parameters.workload }}" ]; then
-                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                fi
                 if [ -n "${{ parameters.purpose }}" ]; then
                   PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
                 fi
@@ -132,6 +101,12 @@ stages:
                 if [ -n "${{ parameters.instanceNumber }}" ]; then
                   PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                 fi
+                if [ -n "${{ parameters.location }}" ]; then
+                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                fi
+                if [ -n "${{ parameters.dataRetention }}" ]; then
+                  PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
+                fi
                 if [ -n "${{ parameters.owner }}" ]; then
                   PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                 fi
@@ -139,8 +114,8 @@ stages:
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
 
-                az deployment mg validate \
-                  --management-group-id $(azureTenantId) \
+                az deployment sub validate \
+                  --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
@@ -163,16 +138,13 @@ stages:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "What-If Subscription Vending Deployment"
+            displayName: "What-If Monitoring Deployment"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
                 PARAMS=""
-                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                fi
                 if [ -n "${{ parameters.purpose }}" ]; then
                   PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
                 fi
@@ -185,14 +157,11 @@ stages:
                 if [ -n "${{ parameters.instanceNumber }}" ]; then
                   PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                 fi
-                if [ -n "${{ parameters.managementGroupId }}" ]; then
-                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                if [ -n "${{ parameters.location }}" ]; then
+                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
                 fi
-                if [ -n "${{ parameters.billingScope }}" ]; then
-                  PARAMS="$PARAMS --parameters billingScope='${{ parameters.billingScope }}'"
-                fi
-                if [ -n "${{ parameters.workload }}" ]; then
-                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                if [ -n "${{ parameters.dataRetention }}" ]; then
+                  PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
                 fi
                 if [ -n "${{ parameters.owner }}" ]; then
                   PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
@@ -201,15 +170,15 @@ stages:
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
 
-                az deployment mg what-if \
-                  --management-group-id $(azureTenantId) \
+                az deployment sub what-if \
+                  --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
                   $PARAMS
 
   - stage: Deploy
-    displayName: "Deploy Empty Subscription Vending"
+    displayName: "Deploy Monitoring Infrastructure"
     dependsOn:
       - Validate
       - WhatIf
@@ -221,9 +190,9 @@ stages:
         eq('${{ parameters.deploymentStage }}', 'Deploy')
       )
     jobs:
-      - deployment: DeploySubscriptionVending
-        displayName: "Deploy Subscription Vending"
-        environment: "subscription-vending"
+      - deployment: DeployMonitoring
+        displayName: "Deploy Monitoring"
+        environment: "monitoring"
         strategy:
           runOnce:
             deploy:
@@ -231,16 +200,13 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: "Deploy Empty Subscription Vending"
+                  displayName: "Deploy Monitoring Infrastructure"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
                       PARAMS=""
-                      if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                        PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                      fi
                       if [ -n "${{ parameters.purpose }}" ]; then
                         PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
                       fi
@@ -253,14 +219,11 @@ stages:
                       if [ -n "${{ parameters.instanceNumber }}" ]; then
                         PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                       fi
-                      if [ -n "${{ parameters.managementGroupId }}" ]; then
-                        PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                      if [ -n "${{ parameters.location }}" ]; then
+                        PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
                       fi
-                      if [ -n "${{ parameters.billingScope }}" ]; then
-                        PARAMS="$PARAMS --parameters billingScope='${{ parameters.billingScope }}'"
-                      fi
-                      if [ -n "${{ parameters.workload }}" ]; then
-                        PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                      if [ -n "${{ parameters.dataRetention }}" ]; then
+                        PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
                       fi
                       if [ -n "${{ parameters.owner }}" ]; then
                         PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
@@ -269,9 +232,9 @@ stages:
                         PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                       fi
 
-                      az deployment mg create \
-                        --name 'empty-sub-vending-$(Build.BuildNumber)' \
-                        --management-group-id $(azureTenantId) \
+                      az deployment sub create \
+                        --name 'monitoring-$(Build.BuildNumber)' \
+                        --subscription "${{ parameters.subscriptionId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \

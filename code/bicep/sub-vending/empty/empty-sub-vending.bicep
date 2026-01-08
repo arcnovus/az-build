@@ -47,10 +47,10 @@ module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
     subscriptionAliasEnabled: true
     virtualNetworkEnabled: false
     subscriptionTags: {
-      purpose: purpose
-      environment: environment
-      owner: owner
-      managedBy: managedBy
+      Project: purpose
+      Environment: environment
+      Owner: owner
+      ManagedBy: managedBy
     }
   }
 }
