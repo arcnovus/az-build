@@ -57,6 +57,11 @@ param enableDDoSProtection = false
 // Private DNS Resolver
 param enableDnsResolver = false
 
+// IPAM Pool
+param enableIpamPool = false
+param ipamPoolAddressSpace = '10.0.0.0/8'
+param ipamPoolDescription = 'Centralized IPAM pool for hub and spoke networks'
+
 // ============================================================================
 // OPTIONAL RESOURCE CONFIGURATION
 // ============================================================================

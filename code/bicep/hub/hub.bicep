@@ -68,6 +68,15 @@ param enableDDoSProtection bool = false
 @description('Enable Private DNS Resolver')
 param enableDnsResolver bool = false
 
+@description('Enable IPAM Pool for centralized IP address management')
+param enableIpamPool bool = false
+
+@description('The IP address range for the IPAM pool (e.g., 10.0.0.0/8 for large organizations)')
+param ipamPoolAddressSpace string = '10.0.0.0/8'
+
+@description('Description for the IPAM pool')
+param ipamPoolDescription string = 'Centralized IPAM pool for hub and spoke networks'
+
 // VPN Gateway P2S configuration
 @description('VPN client address pool for P2S connections')
 param vpnClientAddressPoolPrefix string = '172.16.0.0/24'
@@ -98,6 +107,7 @@ var azureFirewallPolicyName = 'afwp-${purpose}-${environment}-${locationCode}-${
 var ddosProtectionPlanName = 'ddos-${purpose}-${environment}-${locationCode}-${instanceNumber}'
 var keyVaultName = 'kv-${purpose}-${environment}-${locationCode}-${instanceNumber}'
 var dnsResolverName = 'dnspr-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var ipamPoolName = 'ipam-${purpose}-${environment}-${locationCode}-${instanceNumber}'
 
 // Common tags
 var commonTags = {
@@ -211,10 +221,13 @@ module avnm 'br/public:avm/res/network/network-manager:0.5.0' = {
   params: {
     name: avnmName
     location: location
-    networkManagerScopeAccesses: [
-      'Connectivity'
-      'SecurityAdmin'
-    ]
+    networkManagerScopeAccesses: concat(
+      [
+        'Connectivity'
+        'SecurityAdmin'
+      ],
+      enableIpamPool ? ['IPAM'] : []
+    )
     networkManagerScopes: {
       managementGroups: [
         '/providers/Microsoft.Management/managementGroups/${avnmManagementGroupId}'
@@ -222,6 +235,28 @@ module avnm 'br/public:avm/res/network/network-manager:0.5.0' = {
     }
     tags: commonTags
   }
+}
+
+// ============================================================================
+// IPAM POOL (Optional)
+// ============================================================================
+
+module ipamPool './ipam-pool.bicep' = if (enableIpamPool) {
+  name: 'deploy-ipam-pool-${ipamPoolName}'
+  scope: hubResourceGroup
+  params: {
+    networkManagerName: avnmName
+    ipamPoolName: ipamPoolName
+    location: location
+    addressPrefixes: [
+      ipamPoolAddressSpace
+    ]
+    poolDescription: ipamPoolDescription
+    tags: commonTags
+  }
+  dependsOn: [
+    avnm
+  ]
 }
 
 // ============================================================================
@@ -284,6 +319,28 @@ module hubVnet 'br/public:avm/res/network/virtual-network:0.7.0' = {
     ]
     tags: commonTags
   }
+}
+
+// ============================================================================
+// IPAM POOL ALLOCATION (Optional - Associates Hub VNet with IPAM Pool)
+// ============================================================================
+
+module hubVnetIpamAllocation './ipam-static-cidr.bicep' = if (enableIpamPool) {
+  name: 'deploy-ipam-staticcidr-${hubVnetName}'
+  scope: hubResourceGroup
+  params: {
+    networkManagerName: avnmName
+    ipamPoolName: ipamPoolName
+    staticCidrName: '${hubVnetName}-allocation'
+    addressPrefixes: [
+      hubVnetAddressSpace
+    ]
+    cidrDescription: 'Hub VNet address space allocation'
+  }
+  dependsOn: [
+    ipamPool
+    hubVnet
+  ]
 }
 
 // Link Private DNS Zone to Hub VNet
@@ -759,3 +816,9 @@ output keyVaultUri string = keyVault.outputs.uri
 
 @description('The resource ID of the Private DNS Resolver (if enabled)')
 output dnsResolverResourceId string = enableDnsResolver ? dnsResolver.outputs.resourceId : ''
+
+@description('The resource ID of the IPAM Pool (if enabled)')
+output ipamPoolResourceId string = enableIpamPool ? ipamPool.outputs.resourceId : ''
+
+@description('The name of the IPAM Pool (if enabled)')
+output ipamPoolNameOutput string = enableIpamPool ? ipamPool.outputs.name : ''

@@ -99,6 +99,18 @@ parameters:
     displayName: "Enable Private DNS Resolver"
     type: boolean
     default: false
+  - name: enableIpamPool
+    displayName: "Enable IPAM Pool"
+    type: boolean
+    default: false
+  - name: ipamPoolAddressSpace
+    displayName: "IPAM Pool Address Space"
+    type: string
+    default: "10.0.0.0/8"
+  - name: ipamPoolDescription
+    displayName: "IPAM Pool Description"
+    type: string
+    default: "Centralized IPAM pool for hub and spoke networks"
   # Optional resource configuration
   - name: vpnClientAddressPoolPrefix
     displayName: "VPN Client Address Pool Prefix (for P2S)"
@@ -195,6 +207,13 @@ stages:
                 PARAMS="$PARAMS --parameters enableAzureFirewall=${{ parameters.enableAzureFirewall }}"
                 PARAMS="$PARAMS --parameters enableDDoSProtection=${{ parameters.enableDDoSProtection }}"
                 PARAMS="$PARAMS --parameters enableDnsResolver=${{ parameters.enableDnsResolver }}"
+                PARAMS="$PARAMS --parameters enableIpamPool=${{ parameters.enableIpamPool }}"
+                if [ -n "${{ parameters.ipamPoolAddressSpace }}" ]; then
+                  PARAMS="$PARAMS --parameters ipamPoolAddressSpace='${{ parameters.ipamPoolAddressSpace }}'"
+                fi
+                if [ -n "${{ parameters.ipamPoolDescription }}" ]; then
+                  PARAMS="$PARAMS --parameters ipamPoolDescription='${{ parameters.ipamPoolDescription }}'"
+                fi
                 # Optional resource configuration
                 if [ -n "${{ parameters.vpnClientAddressPoolPrefix }}" ]; then
                   PARAMS="$PARAMS --parameters vpnClientAddressPoolPrefix='${{ parameters.vpnClientAddressPoolPrefix }}'"
@@ -277,6 +296,13 @@ stages:
                 PARAMS="$PARAMS --parameters enableAzureFirewall=${{ parameters.enableAzureFirewall }}"
                 PARAMS="$PARAMS --parameters enableDDoSProtection=${{ parameters.enableDDoSProtection }}"
                 PARAMS="$PARAMS --parameters enableDnsResolver=${{ parameters.enableDnsResolver }}"
+                PARAMS="$PARAMS --parameters enableIpamPool=${{ parameters.enableIpamPool }}"
+                if [ -n "${{ parameters.ipamPoolAddressSpace }}" ]; then
+                  PARAMS="$PARAMS --parameters ipamPoolAddressSpace='${{ parameters.ipamPoolAddressSpace }}'"
+                fi
+                if [ -n "${{ parameters.ipamPoolDescription }}" ]; then
+                  PARAMS="$PARAMS --parameters ipamPoolDescription='${{ parameters.ipamPoolDescription }}'"
+                fi
                 # Optional resource configuration
                 if [ -n "${{ parameters.vpnClientAddressPoolPrefix }}" ]; then
                   PARAMS="$PARAMS --parameters vpnClientAddressPoolPrefix='${{ parameters.vpnClientAddressPoolPrefix }}'"
@@ -365,6 +391,14 @@ stages:
                       PARAMS="$PARAMS --parameters enableVpnGateway=${{ parameters.enableVpnGateway }}"
                       PARAMS="$PARAMS --parameters enableAzureFirewall=${{ parameters.enableAzureFirewall }}"
                       PARAMS="$PARAMS --parameters enableDDoSProtection=${{ parameters.enableDDoSProtection }}"
+                      PARAMS="$PARAMS --parameters enableDnsResolver=${{ parameters.enableDnsResolver }}"
+                      PARAMS="$PARAMS --parameters enableIpamPool=${{ parameters.enableIpamPool }}"
+                      if [ -n "${{ parameters.ipamPoolAddressSpace }}" ]; then
+                        PARAMS="$PARAMS --parameters ipamPoolAddressSpace='${{ parameters.ipamPoolAddressSpace }}'"
+                      fi
+                      if [ -n "${{ parameters.ipamPoolDescription }}" ]; then
+                        PARAMS="$PARAMS --parameters ipamPoolDescription='${{ parameters.ipamPoolDescription }}'"
+                      fi
                       # Optional resource configuration
                       if [ -n "${{ parameters.vpnClientAddressPoolPrefix }}" ]; then
                         PARAMS="$PARAMS --parameters vpnClientAddressPoolPrefix='${{ parameters.vpnClientAddressPoolPrefix }}'"
