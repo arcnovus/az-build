@@ -1,4 +1,4 @@
-using 'empty-sub-vending.bicep'
+using 'sub-vending.bicep'
 
 param subscriptionDisplayName = 'example-subscription'
 

@@ -1,5 +1,5 @@
-# Azure Pipeline to deploy Empty Subscription Vending
-# This pipeline deploys the empty-sub-vending Bicep template at the management group scope
+# Azure Pipeline to deploy Subscription Vending
+# This pipeline deploys the sub-vending Bicep template at the management group scope
 # This pipeline is reusable and can be triggered with parameters
 
 trigger: none
@@ -11,11 +11,11 @@ pool:
 variables:
   - group: common-variables
   - name: bicepPath
-    value: "code/bicep/sub-vending/empty"
+    value: "code/bicep/sub-vending"
   - name: templateFile
-    value: "$(bicepPath)/empty-sub-vending.bicep"
+    value: "$(bicepPath)/sub-vending.bicep"
   - name: parametersFile
-    value: "$(bicepPath)/empty-sub-vending.bicepparam"
+    value: "$(bicepPath)/sub-vending.bicepparam"
 
 parameters:
   - name: subscriptionDisplayName
@@ -209,7 +209,7 @@ stages:
                   $PARAMS
 
   - stage: Deploy
-    displayName: "Deploy Empty Subscription Vending"
+    displayName: "Deploy Subscription Vending"
     dependsOn:
       - Validate
       - WhatIf
@@ -231,7 +231,7 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: "Deploy Empty Subscription Vending"
+                  displayName: "Deploy Subscription Vending"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
@@ -270,7 +270,7 @@ stages:
                       fi
 
                       az deployment mg create \
-                        --name 'empty-sub-vending-$(Build.BuildNumber)' \
+                        --name 'sub-vending-$(Build.BuildNumber)' \
                         --management-group-id $(azureTenantId) \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
