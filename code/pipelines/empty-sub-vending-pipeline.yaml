@@ -1,0 +1,199 @@
+# Azure Pipeline to deploy Empty Subscription Vending
+# This pipeline deploys the empty-sub-vending Bicep template at the management group scope
+# This pipeline is reusable and can be triggered with parameters
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  - group: common-variables
+  - name: bicepPath
+    value: "code/bicep/sub-vending"
+  - name: templateFile
+    value: "$(bicepPath)/empty-sub-vending.bicep"
+  - name: parametersFile
+    value: "$(bicepPath)/empty-sub-vending.bicepparam"
+
+parameters:
+  - name: subscriptionDisplayName
+    displayName: "Subscription Display Name"
+    type: string
+    default: ""
+  - name: subscriptionAliasName
+    displayName: "Subscription Alias Name"
+    type: string
+    default: ""
+  - name: managementGroupId
+    displayName: "Management Group ID"
+    type: string
+    default: ""
+  - name: billingScope
+    displayName: "Billing Scope (optional)"
+    type: string
+    default: ""
+  - name: workload
+    displayName: "Workload Type"
+    type: string
+    default: "Production"
+    values:
+      - Production
+      - DevTest
+  - name: skipValidation
+    displayName: "Skip Validation Stage"
+    type: boolean
+    default: false
+  - name: skipWhatIf
+    displayName: "Skip What-If Stage"
+    type: boolean
+    default: false
+
+stages:
+  - stage: Validate
+    displayName: "Validate Bicep Template"
+    condition: eq('${{ parameters.skipValidation }}', false)
+    jobs:
+      - job: ValidateBicep
+        displayName: "Validate Bicep"
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: "Validate Subscription Vending Deployment"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                PARAMS=""
+                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
+                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
+                fi
+                if [ -n "${{ parameters.subscriptionAliasName }}" ]; then
+                  PARAMS="$PARAMS --parameters subscriptionAliasName='${{ parameters.subscriptionAliasName }}'"
+                fi
+                if [ -n "${{ parameters.managementGroupId }}" ]; then
+                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                fi
+                if [ -n "${{ parameters.billingScope }}" ]; then
+                  PARAMS="$PARAMS --parameters billingScope='${{ parameters.billingScope }}'"
+                fi
+                if [ -n "${{ parameters.workload }}" ]; then
+                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                fi
+
+                az deployment mg validate \
+                  --management-group-id $(azureTenantId) \
+                  --location $(deploymentLocation) \
+                  --template-file $(templateFile) \
+                  --parameters $(parametersFile) \
+                  $PARAMS
+
+  - stage: WhatIf
+    displayName: "What-If Analysis"
+    dependsOn:
+      - Validate
+    condition: |
+      and(
+        or(
+          eq(dependencies.Validate.result, 'Succeeded'),
+          eq(dependencies.Validate.result, 'Skipped')
+        ),
+        eq('${{ parameters.skipWhatIf }}', false)
+      )
+    jobs:
+      - job: WhatIfAnalysis
+        displayName: "What-If"
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: "What-If Subscription Vending Deployment"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                PARAMS=""
+                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
+                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
+                fi
+                if [ -n "${{ parameters.subscriptionAliasName }}" ]; then
+                  PARAMS="$PARAMS --parameters subscriptionAliasName='${{ parameters.subscriptionAliasName }}'"
+                fi
+                if [ -n "${{ parameters.managementGroupId }}" ]; then
+                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                fi
+                if [ -n "${{ parameters.billingScope }}" ]; then
+                  PARAMS="$PARAMS --parameters billingScope='${{ parameters.billingScope }}'"
+                fi
+                if [ -n "${{ parameters.workload }}" ]; then
+                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                fi
+
+                az deployment mg what-if \
+                  --management-group-id $(azureTenantId) \
+                  --location $(deploymentLocation) \
+                  --template-file $(templateFile) \
+                  --parameters $(parametersFile) \
+                  $PARAMS
+
+  - stage: Deploy
+    displayName: "Deploy Empty Subscription Vending"
+    dependsOn:
+      - Validate
+      - WhatIf
+    condition: |
+      and(
+        or(
+          eq(dependencies.Validate.result, 'Succeeded'),
+          eq(dependencies.Validate.result, 'Skipped')
+        ),
+        or(
+          eq(dependencies.WhatIf.result, 'Succeeded'),
+          eq(dependencies.WhatIf.result, 'Skipped')
+        )
+      )
+    jobs:
+      - deployment: DeploySubscriptionVending
+        displayName: "Deploy Subscription Vending"
+        environment: "subscription-vending"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Deploy Empty Subscription Vending"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      PARAMS=""
+                      if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
+                        PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
+                      fi
+                      if [ -n "${{ parameters.subscriptionAliasName }}" ]; then
+                        PARAMS="$PARAMS --parameters subscriptionAliasName='${{ parameters.subscriptionAliasName }}'"
+                      fi
+                      if [ -n "${{ parameters.managementGroupId }}" ]; then
+                        PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                      fi
+                      if [ -n "${{ parameters.billingScope }}" ]; then
+                        PARAMS="$PARAMS --parameters billingScope='${{ parameters.billingScope }}'"
+                      fi
+                      if [ -n "${{ parameters.workload }}" ]; then
+                        PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
+                      fi
+
+                      az deployment mg create \
+                        --name 'empty-sub-vending-$(Build.BuildNumber)' \
+                        --management-group-id $(azureTenantId) \
+                        --location $(deploymentLocation) \
+                        --template-file $(templateFile) \
+                        --parameters $(parametersFile) \
+                        $PARAMS
