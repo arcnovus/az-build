@@ -1,0 +1,233 @@
+# Azure Pipeline to deploy Governance Compliance Policies using Deployment Stacks
+# This pipeline deploys the governance Bicep template as a Deployment Stack at management group scope
+# Assigns Microsoft Cloud Security Benchmark and Canada Federal PBMM policies in audit mode
+
+trigger: none
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  - group: common-variables
+  - name: bicepPath
+    value: "code/bicep/governance"
+  - name: templateFile
+    value: "$(bicepPath)/governance.bicep"
+  - name: parametersFile
+    value: "$(bicepPath)/governance.bicepparam"
+  - name: stackName
+    value: "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}"
+
+parameters:
+  - name: managementGroupId
+    displayName: "Management Group ID (where policies will be assigned)"
+    type: string
+  - name: environment
+    displayName: "Environment"
+    type: string
+    default: "live"
+    values:
+      - nonprod
+      - dev
+      - test
+      - uat
+      - staging
+      - prod
+      - live
+  - name: locationCode
+    displayName: "Location Code (e.g., cac for canada central)"
+    type: string
+    default: "cac"
+  - name: location
+    displayName: "Azure Region"
+    type: string
+    default: "canadacentral"
+  - name: owner
+    displayName: "Owner (e.g. a group mailbox like platform-team@example.com)"
+    type: string
+  - name: managedBy
+    displayName: "Managed By"
+    type: string
+    default: "Bicep"
+  - name: enableMCSB
+    displayName: "Enable Microsoft Cloud Security Benchmark"
+    type: boolean
+    default: true
+  - name: enableCanadaPBMM
+    displayName: "Enable Canada Federal PBMM"
+    type: boolean
+    default: true
+  - name: denySettingsMode
+    displayName: "Deny Settings Mode"
+    type: string
+    default: "denyWriteAndDelete"
+    values:
+      - none
+      - denyDelete
+      - denyWriteAndDelete
+  - name: actionOnUnmanage
+    displayName: "Action on Unmanaged Resources"
+    type: string
+    default: "detachAll"
+    values:
+      - deleteResources
+      - deleteAll
+      - detachAll
+  - name: deploymentStage
+    displayName: "Pipeline Stage to Run"
+    type: string
+    default: "WhatIf"
+    values:
+      - Validation
+      - WhatIf
+      - Deploy
+
+stages:
+  - stage: Validate
+    displayName: "Validate Deployment Stack"
+    # Runs for: Validation, WhatIf, Deploy (all options)
+    jobs:
+      - job: ValidateStack
+        displayName: "Validate Stack"
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: "Validate Governance Deployment Stack"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                PARAMS=""
+                if [ -n "${{ parameters.environment }}" ]; then
+                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                fi
+                if [ -n "${{ parameters.location }}" ]; then
+                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                fi
+                if [ -n "${{ parameters.owner }}" ]; then
+                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                fi
+                if [ -n "${{ parameters.managedBy }}" ]; then
+                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                fi
+                PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
+                PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
+
+                az stack mg validate \
+                  --name "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}" \
+                  --management-group-id "${{ parameters.managementGroupId }}" \
+                  --location $(deploymentLocation) \
+                  --template-file $(templateFile) \
+                  --parameters $(parametersFile) \
+                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                  $PARAMS
+
+  - stage: WhatIf
+    displayName: "What-If Analysis"
+    dependsOn:
+      - Validate
+    # Runs for: WhatIf, Deploy
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        in('${{ parameters.deploymentStage }}', 'WhatIf', 'Deploy')
+      )
+    jobs:
+      - job: WhatIfAnalysis
+        displayName: "What-If"
+        steps:
+          - checkout: self
+
+          - task: AzureCLI@2
+            displayName: "What-If Governance Deployment Stack"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                PARAMS=""
+                if [ -n "${{ parameters.environment }}" ]; then
+                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                fi
+                if [ -n "${{ parameters.location }}" ]; then
+                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                fi
+                if [ -n "${{ parameters.owner }}" ]; then
+                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                fi
+                if [ -n "${{ parameters.managedBy }}" ]; then
+                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                fi
+                PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
+                PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
+
+                az stack mg create \
+                  --name "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}" \
+                  --management-group-id "${{ parameters.managementGroupId }}" \
+                  --location $(deploymentLocation) \
+                  --template-file $(templateFile) \
+                  --parameters $(parametersFile) \
+                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                  --what-if \
+                  $PARAMS
+
+  - stage: Deploy
+    displayName: "Deploy Governance Deployment Stack"
+    dependsOn:
+      - Validate
+      - WhatIf
+    # Runs for: Deploy only
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        in(dependencies.WhatIf.result, 'Succeeded', 'Skipped'),
+        eq('${{ parameters.deploymentStage }}', 'Deploy')
+      )
+    jobs:
+      - deployment: DeployGovernanceStack
+        displayName: "Deploy Governance Stack"
+        environment: "governance"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Deploy Governance Deployment Stack"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      PARAMS=""
+                      if [ -n "${{ parameters.environment }}" ]; then
+                        PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                      fi
+                      if [ -n "${{ parameters.location }}" ]; then
+                        PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                      fi
+                      if [ -n "${{ parameters.owner }}" ]; then
+                        PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                      fi
+                      if [ -n "${{ parameters.managedBy }}" ]; then
+                        PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                      fi
+                      PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
+                      PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
+
+                      az stack mg create \
+                        --name "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}" \
+                        --management-group-id "${{ parameters.managementGroupId }}" \
+                        --location $(deploymentLocation) \
+                        --template-file $(templateFile) \
+                        --parameters $(parametersFile) \
+                        --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                        --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                        --yes \
+                        $PARAMS
