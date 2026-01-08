@@ -1,5 +1,5 @@
-# Azure Pipeline to deploy Monitoring Infrastructure
-# This pipeline deploys the monitoring Bicep template at the subscription scope
+# Azure Pipeline to deploy Monitoring Infrastructure using Deployment Stacks
+# This pipeline deploys the monitoring Bicep template as a Deployment Stack at subscription scope
 # Deploys centralized Log Analytics workspace to the monitoring subscription
 
 trigger: none
@@ -16,6 +16,8 @@ variables:
     value: "$(bicepPath)/monitoring.bicep"
   - name: parametersFile
     value: "$(bicepPath)/monitoring.bicepparam"
+  - name: stackName
+    value: "stack-monitoring-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}"
 
 parameters:
   - name: subscriptionId
@@ -55,13 +57,28 @@ parameters:
     type: number
     default: 60
   - name: owner
-    displayName: "Owner"
+    displayName: "Owner (e.g. a group mailbox like platform-team@example.com)"
     type: string
-    default: "platform-team"
   - name: managedBy
     displayName: "Managed By"
     type: string
     default: "Bicep"
+  - name: denySettingsMode
+    displayName: "Deny Settings Mode"
+    type: string
+    default: "denyWriteAndDelete"
+    values:
+      - none
+      - denyDelete
+      - denyWriteAndDelete
+  - name: actionOnUnmanage
+    displayName: "Action on Unmanaged Resources"
+    type: string
+    default: "detachAll"
+    values:
+      - deleteResources
+      - deleteAll
+      - detachAll
   - name: deploymentStage
     displayName: "Pipeline Stage to Run"
     type: string
@@ -73,16 +90,16 @@ parameters:
 
 stages:
   - stage: Validate
-    displayName: "Validate Bicep Template"
+    displayName: "Validate Deployment Stack"
     # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
-      - job: ValidateBicep
-        displayName: "Validate Bicep"
+      - job: ValidateStack
+        displayName: "Validate Stack"
         steps:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "Validate Monitoring Deployment"
+            displayName: "Validate Monitoring Deployment Stack"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
@@ -114,11 +131,14 @@ stages:
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
 
-                az deployment sub validate \
+                az stack sub validate \
+                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
+                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   $PARAMS
 
   - stage: WhatIf
@@ -138,7 +158,7 @@ stages:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "What-If Monitoring Deployment"
+            displayName: "What-If Monitoring Deployment Stack"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
@@ -170,15 +190,19 @@ stages:
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
 
-                az deployment sub what-if \
+                az stack sub create \
+                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
+                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                  --what-if \
                   $PARAMS
 
   - stage: Deploy
-    displayName: "Deploy Monitoring Infrastructure"
+    displayName: "Deploy Monitoring Deployment Stack"
     dependsOn:
       - Validate
       - WhatIf
@@ -190,8 +214,8 @@ stages:
         eq('${{ parameters.deploymentStage }}', 'Deploy')
       )
     jobs:
-      - deployment: DeployMonitoring
-        displayName: "Deploy Monitoring"
+      - deployment: DeployMonitoringStack
+        displayName: "Deploy Monitoring Stack"
         environment: "monitoring"
         strategy:
           runOnce:
@@ -200,7 +224,7 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: "Deploy Monitoring Infrastructure"
+                  displayName: "Deploy Monitoring Deployment Stack"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
@@ -232,10 +256,13 @@ stages:
                         PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                       fi
 
-                      az deployment sub create \
-                        --name 'monitoring-$(Build.BuildNumber)' \
+                      az stack sub create \
+                        --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                         --subscription "${{ parameters.subscriptionId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
+                        --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                        --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                        --yes \
                         $PARAMS
