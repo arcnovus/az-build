@@ -11,7 +11,7 @@ pool:
 variables:
   - group: common-variables
   - name: bicepPath
-    value: "code/bicep/sub-vending"
+    value: "code/bicep/sub-vending/empty"
   - name: templateFile
     value: "$(bicepPath)/empty-sub-vending.bicep"
   - name: parametersFile
