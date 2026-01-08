@@ -18,7 +18,7 @@ param managementGroups array
 @batchSize(1) // Deploy sequentially to ensure parents exist before children (array must be sorted: parents first)
 module managementGroupModule 'br/public:avm/res/management/management-group:0.1.0' = [
   for mg in managementGroups: {
-    name: 'mg-${mg.id}'
+    name: mg.id
     scope: managementGroup(mg.parentId)
     params: {
       name: mg.id

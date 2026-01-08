@@ -1,63 +1,63 @@
 using 'mg-hierarchy.bicep'
 
 param tenantRootManagementGroupId = 'your-tenant-id'
-param orgName = 'org-name'
+param orgName = 'org'
 param orgDisplayName = 'Organization Name'
 
 param managementGroups = [
   {
-    id: orgName
+    id: 'mg-${orgName}'
     displayName: orgDisplayName
     parentId: tenantRootManagementGroupId
   }
   {
-    id: 'platform'
+    id: 'mg-platform'
     displayName: 'Platform'
-    parentId: orgName
+    parentId: 'mg-${orgName}'
   }
   {
-    id: 'landing-zone'
+    id: 'mg-landing-zone'
     displayName: 'Landing Zone'
-    parentId: orgName
+    parentId: 'mg-${orgName}'
   }
   {
-    id: 'sandbox'
+    id: 'mg-sandbox'
     displayName: 'Sandbox'
-    parentId: orgName
+    parentId: 'mg-${orgName}'
   }
   {
-    id: 'decommissioned'
+    id: 'mg-decommissioned'
     displayName: 'Decommissioned'
-    parentId: orgName
+    parentId: 'mg-${orgName}'
   }
   {
-    id: 'management'
+    id: 'mg-management'
     displayName: 'Management'
-    parentId: 'platform'
+    parentId: 'mg-platform'
   }
   {
-    id: 'connectivity'
+    id: 'mg-connectivity'
     displayName: 'Connectivity'
-    parentId: 'platform'
+    parentId: 'mg-platform'
   }
   {
-    id: 'corp-prod'
+    id: 'mg-corp-prod'
     displayName: 'Corp Production'
-    parentId: 'landing-zone'
+    parentId: 'mg-landing-zone'
   }
   {
-    id: 'corp-non-prod'
+    id: 'mg-corp-non-prod'
     displayName: 'Corp Non-Production'
-    parentId: 'landing-zone'
+    parentId: 'mg-landing-zone'
   }
   {
-    id: 'online-prod'
+    id: 'mg-online-prod'
     displayName: 'Online Production'
-    parentId: 'landing-zone'
+    parentId: 'mg-landing-zone'
   }
   {
-    id: 'online-non-prod'
+    id: 'mg-online-non-prod'
     displayName: 'Online Non-Production'
-    parentId: 'landing-zone'
+    parentId: 'mg-landing-zone'
   }
 ]
