@@ -44,6 +44,8 @@ variables:
     value: "$(bicepPath)/sub-vending.bicep"
   - name: parametersFile
     value: "$(bicepPath)/sub-vending.bicepparam"
+  - name: scriptsPath
+    value: "code/pipelines/scripts"
 
 parameters:
   - name: workloadAlias
@@ -141,6 +143,20 @@ stages:
             displayName: "Validate Environment Parameter"
 
           - task: AzureCLI@2
+            name: LookupSubscription
+            displayName: "Lookup Existing Subscription"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                bash $(scriptsPath)/lookup-subscription.sh \
+                  "${{ parameters.workloadAlias }}" \
+                  "${{ parameters.environment }}" \
+                  "${{ parameters.locationCode }}" \
+                  "${{ parameters.instanceNumber }}"
+
+          - task: AzureCLI@2
             displayName: "Validate Subscription Vending Deployment"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
@@ -159,6 +175,9 @@ stages:
                   fi
                 fi
 
+                # Get existing subscription ID from lookup step (may be empty)
+                EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
+
                 az deployment tenant validate \
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
@@ -171,7 +190,8 @@ stages:
                   --parameters locationCode="${{ parameters.locationCode }}" \
                   --parameters instanceNumber="${{ parameters.instanceNumber }}" \
                   --parameters owner="${{ parameters.owner }}" \
-                  --parameters managedBy="${{ parameters.managedBy }}"
+                  --parameters managedBy="${{ parameters.managedBy }}" \
+                  --parameters existingSubscriptionId="$EXISTING_SUB_ID"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -188,6 +208,20 @@ stages:
         displayName: "What-If"
         steps:
           - checkout: self
+
+          - task: AzureCLI@2
+            name: LookupSubscription
+            displayName: "Lookup Existing Subscription"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                bash $(scriptsPath)/lookup-subscription.sh \
+                  "${{ parameters.workloadAlias }}" \
+                  "${{ parameters.environment }}" \
+                  "${{ parameters.locationCode }}" \
+                  "${{ parameters.instanceNumber }}"
 
           - task: AzureCLI@2
             displayName: "What-If Subscription Vending Deployment"
@@ -208,6 +242,9 @@ stages:
                   fi
                 fi
 
+                # Get existing subscription ID from lookup step (may be empty)
+                EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
+
                 az deployment tenant what-if \
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
@@ -220,7 +257,8 @@ stages:
                   --parameters locationCode="${{ parameters.locationCode }}" \
                   --parameters instanceNumber="${{ parameters.instanceNumber }}" \
                   --parameters owner="${{ parameters.owner }}" \
-                  --parameters managedBy="${{ parameters.managedBy }}"
+                  --parameters managedBy="${{ parameters.managedBy }}" \
+                  --parameters existingSubscriptionId="$EXISTING_SUB_ID"
 
   - stage: Deploy
     displayName: "Deploy Subscription Vending"
@@ -245,6 +283,20 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
+                  name: LookupSubscription
+                  displayName: "Lookup Existing Subscription"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      bash $(scriptsPath)/lookup-subscription.sh \
+                        "${{ parameters.workloadAlias }}" \
+                        "${{ parameters.environment }}" \
+                        "${{ parameters.locationCode }}" \
+                        "${{ parameters.instanceNumber }}"
+
+                - task: AzureCLI@2
                   displayName: "Deploy Subscription Vending"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
@@ -263,6 +315,9 @@ stages:
                         fi
                       fi
 
+                      # Get existing subscription ID from lookup step (may be empty)
+                      EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
+
                       az deployment tenant create \
                         --name "sub-vending-$(Build.BuildNumber)" \
                         --location "$(deploymentLocation)" \
@@ -276,4 +331,5 @@ stages:
                         --parameters locationCode="${{ parameters.locationCode }}" \
                         --parameters instanceNumber="${{ parameters.instanceNumber }}" \
                         --parameters owner="${{ parameters.owner }}" \
-                        --parameters managedBy="${{ parameters.managedBy }}"
+                        --parameters managedBy="${{ parameters.managedBy }}" \
+                        --parameters existingSubscriptionId="$EXISTING_SUB_ID"

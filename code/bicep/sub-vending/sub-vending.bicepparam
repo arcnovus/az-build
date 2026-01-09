@@ -17,3 +17,6 @@ param instanceNumber = '001'
 param owner = 'example-owner'
 
 param managedBy = 'Bicep'
+
+// Optional: Set to an existing subscription ID to move it instead of creating new
+param existingSubscriptionId = ''
