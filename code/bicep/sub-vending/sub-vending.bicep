@@ -35,7 +35,9 @@ param managedBy string = 'Bicep'
 var subscriptionAliasName = 'subcr-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Use AVM sub-vending module to create subscription and assign to management group
-module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.2' = {
+// Note: Using 0.5.1 instead of 0.5.2 due to a bug in 0.5.2 where the role-assignment module
+// uses an invalid API version (2025-04-01) for managementGroups that doesn't exist yet
+module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.1' = {
   name: 'sub-vending-${subscriptionAliasName}'
   params: {
     subscriptionDisplayName: subscriptionDisplayName
