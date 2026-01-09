@@ -97,7 +97,7 @@ resource targetMg 'Microsoft.Management/managementGroups@2023-04-01' existing = 
 }
 
 // Only create a new subscription if no existing subscription ID is provided
-resource subscriptionAlias 'Microsoft.Subscription/aliases@2024-08-01-preview' = if (empty(existingSubscriptionId)) {
+resource subscriptionAlias 'Microsoft.Subscription/aliases@2024-08-01-preview' = {
   name: subscriptionAliasName
   properties: {
     displayName: subscriptionAliasName
