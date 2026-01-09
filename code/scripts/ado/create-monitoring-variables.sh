@@ -29,15 +29,18 @@ GROUP_DESCRIPTION="Variables for monitoring infrastructure deployment pipeline"
 MONITORING_SUBSCRIPTION_ID="${MONITORING_SUBSCRIPTION_ID:-}"
 DATA_RETENTION_DAYS="${DATA_RETENTION_DAYS:-60}"
 
-# Variable definitions for this group
-declare -A MONITORING_VARIABLES=(
-    ["monitoringSubscriptionId"]="${MONITORING_SUBSCRIPTION_ID}"
-    ["dataRetention"]="${DATA_RETENTION_DAYS}"
-)
-
 # =============================================================================
 # Functions
 # =============================================================================
+
+# Set a variable and log it
+set_variable() {
+    local group_id="$1"
+    local var_name="$2"
+    local var_value="$3"
+    log_info "  Setting ${var_name}..."
+    update_variable "$group_id" "$var_name" "$var_value" "false"
+}
 
 # Create or update the monitoring-variables group
 create_monitoring_variables_group() {
@@ -57,11 +60,8 @@ create_monitoring_variables_group() {
     # Update/Create all variables
     log_step "Setting variables..."
     
-    for var_name in "${!MONITORING_VARIABLES[@]}"; do
-        local var_value="${MONITORING_VARIABLES[$var_name]}"
-        log_info "  Setting ${var_name}..."
-        update_variable "$group_id" "$var_name" "$var_value" "false"
-    done
+    set_variable "$group_id" "monitoringSubscriptionId" "${MONITORING_SUBSCRIPTION_ID}"
+    set_variable "$group_id" "dataRetention" "${DATA_RETENTION_DAYS}"
     
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
@@ -71,14 +71,12 @@ create_monitoring_variables_group() {
     # Display the variables
     echo ""
     log_info "Variables in '${GROUP_NAME}':"
-    for var_name in "${!MONITORING_VARIABLES[@]}"; do
-        local var_value="${MONITORING_VARIABLES[$var_name]}"
-        if [[ -z "$var_value" ]]; then
-            echo "  - ${var_name}: (empty - set after subscription is created)"
-        else
-            echo "  - ${var_name}: ${var_value}"
-        fi
-    done
+    if [[ -z "${MONITORING_SUBSCRIPTION_ID}" ]]; then
+        echo "  - monitoringSubscriptionId: (empty - set after subscription is created)"
+    else
+        echo "  - monitoringSubscriptionId: ${MONITORING_SUBSCRIPTION_ID}"
+    fi
+    echo "  - dataRetention: ${DATA_RETENTION_DAYS}"
 }
 
 # Dry run - show what would be done
@@ -90,14 +88,12 @@ dry_run() {
     log_info "Would create/update variable group: ${GROUP_NAME}"
     echo ""
     log_info "Variables that would be set:"
-    for var_name in "${!MONITORING_VARIABLES[@]}"; do
-        local var_value="${MONITORING_VARIABLES[$var_name]}"
-        if [[ -z "$var_value" ]]; then
-            echo "  - ${var_name}: (empty - set after subscription is created)"
-        else
-            echo "  - ${var_name}: ${var_value}"
-        fi
-    done
+    if [[ -z "${MONITORING_SUBSCRIPTION_ID}" ]]; then
+        echo "  - monitoringSubscriptionId: (empty - set after subscription is created)"
+    else
+        echo "  - monitoringSubscriptionId: ${MONITORING_SUBSCRIPTION_ID}"
+    fi
+    echo "  - dataRetention: ${DATA_RETENTION_DAYS}"
     echo ""
     
     log_info "Configuration:"

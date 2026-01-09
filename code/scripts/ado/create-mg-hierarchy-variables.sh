@@ -29,15 +29,18 @@ GROUP_DESCRIPTION="Variables for management group hierarchy deployment pipeline"
 ORG_NAME="${ORG_NAME:-org}"
 ORG_DISPLAY_NAME="${ORG_DISPLAY_NAME:-Organization Name}"
 
-# Variable definitions for this group
-declare -A MG_HIERARCHY_VARIABLES=(
-    ["orgName"]="${ORG_NAME}"
-    ["orgDisplayName"]="${ORG_DISPLAY_NAME}"
-)
-
 # =============================================================================
 # Functions
 # =============================================================================
+
+# Set a variable and log it
+set_variable() {
+    local group_id="$1"
+    local var_name="$2"
+    local var_value="$3"
+    log_info "  Setting ${var_name}..."
+    update_variable "$group_id" "$var_name" "$var_value" "false"
+}
 
 # Create or update the mg-hierarchy-variables group
 create_mg_hierarchy_variables_group() {
@@ -57,11 +60,8 @@ create_mg_hierarchy_variables_group() {
     # Update/Create all variables
     log_step "Setting variables..."
     
-    for var_name in "${!MG_HIERARCHY_VARIABLES[@]}"; do
-        local var_value="${MG_HIERARCHY_VARIABLES[$var_name]}"
-        log_info "  Setting ${var_name}..."
-        update_variable "$group_id" "$var_name" "$var_value" "false"
-    done
+    set_variable "$group_id" "orgName" "${ORG_NAME}"
+    set_variable "$group_id" "orgDisplayName" "${ORG_DISPLAY_NAME}"
     
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
@@ -71,10 +71,8 @@ create_mg_hierarchy_variables_group() {
     # Display the variables
     echo ""
     log_info "Variables in '${GROUP_NAME}':"
-    for var_name in "${!MG_HIERARCHY_VARIABLES[@]}"; do
-        local var_value="${MG_HIERARCHY_VARIABLES[$var_name]}"
-        echo "  - ${var_name}: ${var_value}"
-    done
+    echo "  - orgName: ${ORG_NAME}"
+    echo "  - orgDisplayName: ${ORG_DISPLAY_NAME}"
 }
 
 # Dry run - show what would be done
@@ -86,10 +84,8 @@ dry_run() {
     log_info "Would create/update variable group: ${GROUP_NAME}"
     echo ""
     log_info "Variables that would be set:"
-    for var_name in "${!MG_HIERARCHY_VARIABLES[@]}"; do
-        local var_value="${MG_HIERARCHY_VARIABLES[$var_name]}"
-        echo "  - ${var_name}: ${var_value}"
-    done
+    echo "  - orgName: ${ORG_NAME}"
+    echo "  - orgDisplayName: ${ORG_DISPLAY_NAME}"
     echo ""
     
     log_info "Configuration:"

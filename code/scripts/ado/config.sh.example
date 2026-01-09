@@ -11,8 +11,8 @@
 #   bash check-prerequisites.sh   # Verify configuration
 #   bash create-variable-groups.sh  # Create Azure DevOps variable groups
 # =============================================================================
-
-set -euo pipefail
+# Note: This file does not use 'set -euo pipefail' because it is sourced
+# by other scripts. The sourcing scripts handle error checking.
 
 # =============================================================================
 # Azure Active Directory / Entra ID Configuration
@@ -64,29 +64,20 @@ export ADO_PROJECT_NAME=""
 # =============================================================================
 # Azure Billing Configuration (for Subscription Vending)
 # =============================================================================
-# These are used for creating new subscriptions via the sub-vending pipeline
-# Find via Azure Portal > Cost Management + Billing > Billing scopes
-#
-# The billing scope is constructed as:
-#   - MCA: /providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}
-#   - EA:  /providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}
-#
-# IMPORTANT: Provide either INVOICE_SECTION_ID (for MCA) or ENROLLMENT_ACCOUNT_ID (for EA), not both
-
-# Billing Account ID (required)
-# For MCA: GUID format (e.g., "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:...")
-# For EA:  Numeric format (e.g., "1234567")
+# Billing Account ID (required) - found in Cost Management + Billing
 export BILLING_ACCOUNT_ID=""
 
-# Billing Profile ID (optional, for reference only - not used in billing scope)
+# Billing Profile ID (optional, for reference)
 export BILLING_PROFILE_ID=""
 
-# Invoice Section ID - for Microsoft Customer Agreement (MCA)
-# Leave empty if using Enterprise Agreement (EA)
+# For MCA (Microsoft Customer Agreement): Use Invoice Section ID
+# For EA (Enterprise Agreement): Use Enrollment Account ID
+# Only ONE of these should be provided - not both
+
+# Invoice Section ID - for MCA billing (leave empty if using EA)
 export INVOICE_SECTION_ID=""
 
-# Enrollment Account ID - for Enterprise Agreement (EA)
-# Leave empty if using Microsoft Customer Agreement (MCA)
+# Enrollment Account ID - for EA billing (leave empty if using MCA)
 export ENROLLMENT_ACCOUNT_ID=""
 
 # =============================================================================
@@ -103,7 +94,8 @@ export DEPLOYMENT_LOCATION="canadacentral"
 export DEFAULT_LOCATION_CODE="cac"
 
 # Default owner for infrastructure resources (e.g., platform team email)
-export DEFAULT_OWNER="platform-team@example.com"
+# Leave empty if not applicable
+export DEFAULT_OWNER=""
 
 # What manages this infrastructure (typically "Bicep")
 export MANAGED_BY="Bicep"
@@ -133,8 +125,9 @@ export DEFAULT_ACTION_ON_UNMANAGE="detachAll"
 # Subscription Names (used by lib.sh)
 # =============================================================================
 # These names are used to look up subscription IDs dynamically
-export MANAGEMENT_SUBSCRIPTION_NAME="Management"
-export CONNECTIVITY_SUBSCRIPTION_NAME="Connectivity"
+# Use your actual subscription names (e.g., "subcr-mngmnt-live-cac-001")
+export MANAGEMENT_SUBSCRIPTION_NAME=""
+export CONNECTIVITY_SUBSCRIPTION_NAME=""
 
 # =============================================================================
 # Management Group Configuration
@@ -146,11 +139,8 @@ export ROOT_MG_DISPLAY_NAME="Organization Root"
 # =============================================================================
 # Organization Configuration (for mg-hierarchy-variables group)
 # =============================================================================
-# Organization name used for management group IDs (e.g., "contoso" -> "mg-contoso")
-export ORG_NAME="org"
-
-# Organization display name shown in Azure Portal
-export ORG_DISPLAY_NAME="Organization Name"
+export ORG_NAME=""
+export ORG_DISPLAY_NAME=""
 
 # =============================================================================
 # Monitoring Configuration (for monitoring-variables group)

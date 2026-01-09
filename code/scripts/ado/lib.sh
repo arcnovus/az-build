@@ -18,11 +18,12 @@ export BLUE='\033[0;34m'
 export CYAN='\033[0;36m'
 export NC='\033[0m' # No Color
 
-log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_step() { echo -e "${CYAN}[STEP]${NC} $1"; }
+# Log functions output to stderr so they don't interfere with function return values
+log_info() { echo -e "${BLUE}[INFO]${NC} $1" >&2; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1" >&2; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
+log_step() { echo -e "${CYAN}[STEP]${NC} $1" >&2; }
 
 # =============================================================================
 # Management Group Functions
@@ -272,24 +273,30 @@ update_variable() {
     local is_secret="${4:-false}"
     
     # Try to update first, if fails then create
-    if ! az pipelines variable-group variable update \
+    # Use || true to prevent set -e from exiting on expected failures
+    local update_result=0
+    az pipelines variable-group variable update \
         --org "${ADO_ORGANIZATION_URL}" \
         --project "${ADO_PROJECT_NAME}" \
         --group-id "${group_id}" \
         --name "${var_name}" \
         --value "${var_value}" \
         --secret "${is_secret}" \
-        -o none 2>/dev/null; then
-        
+        -o none 2>/dev/null || update_result=$?
+    
+    if [[ $update_result -ne 0 ]]; then
         # Variable doesn't exist, create it
-        az pipelines variable-group variable create \
+        if ! az pipelines variable-group variable create \
             --org "${ADO_ORGANIZATION_URL}" \
             --project "${ADO_PROJECT_NAME}" \
             --group-id "${group_id}" \
             --name "${var_name}" \
             --value "${var_value}" \
             --secret "${is_secret}" \
-            -o none 2>/dev/null
+            -o none; then
+            log_error "Failed to create variable '${var_name}' in group ${group_id}"
+            return 1
+        fi
     fi
 }
 

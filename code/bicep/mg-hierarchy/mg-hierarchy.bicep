@@ -1,3 +1,23 @@
+// =============================================================================
+// Management Group Hierarchy Deployment
+// =============================================================================
+// This template deploys a hierarchical structure of management groups.
+//
+// RBAC REQUIREMENTS:
+// The deploying identity (user or service principal) requires BOTH of the
+// following roles at the Tenant Root Management Group:
+//
+//   1. Management Group Contributor - Create/update/delete management groups
+//   2. Contributor - Microsoft.Resources/deployments/write permission
+//
+// The Contributor role is required because ARM creates deployment resources
+// at each management group scope during nested module deployments. Since child
+// management groups don't exist during initial deployment, these permissions
+// must be inherited from the Tenant Root Group.
+//
+// See: docs/Management-Group-Hierarchy/Creating-Management-Group-Hierarchy.md
+// =============================================================================
+
 targetScope = 'managementGroup'
 
 @description('The tenant root management group ID')

@@ -7,12 +7,62 @@ This guide walks you through the process of creating your Azure Management Group
 Before creating the management group hierarchy, ensure you have:
 
 1. **Azure AD Tenant**: Access to an Azure AD tenant
-2. **Required Permissions**: 
-   - Owner or Management Group Contributor role at the Tenant Root Management Group
-   - Or Global Administrator role in Azure AD
+2. **Required Permissions**: See [RBAC Requirements](#rbac-requirements) below
 3. **Azure CLI**: Installed and configured (for local deployment)
 4. **Azure DevOps**: Access to the pipeline (for automated deployment)
 5. **Service Connection**: Configured in Azure DevOps (for pipeline deployment)
+
+## RBAC Requirements
+
+### For Service Principals (Azure DevOps Pipelines)
+
+When deploying via Azure DevOps pipelines, the service principal used by the service connection requires **both** of the following roles assigned at the **Tenant Root Management Group**:
+
+| Role | Purpose |
+|------|---------|
+| **Management Group Contributor** | Create, update, and delete management groups |
+| **Contributor** | `Microsoft.Resources/deployments/write` permission for ARM template deployments |
+
+> **⚠️ Important**: The `Management Group Contributor` role alone is NOT sufficient. ARM deployments require `Microsoft.Resources/deployments/write` permission at each management group scope where nested deployments occur. Since child management groups don't exist yet during initial deployment, these permissions must be inherited from the Tenant Root Group via the `Contributor` role.
+
+#### Assigning Required Roles
+
+Run these commands as a user with Owner or User Access Administrator permissions at the Tenant Root Group:
+
+```bash
+# Get the service principal object ID (from Azure DevOps service connection or error message)
+SP_OBJECT_ID="<service-principal-object-id>"
+
+# Get the Tenant Root Management Group ID (usually same as tenant ID)
+TENANT_ROOT_MG=$(az account management-group list --query "[?displayName=='Tenant Root Group'].name" -o tsv)
+
+# Assign Management Group Contributor role
+az role assignment create \
+  --assignee "$SP_OBJECT_ID" \
+  --role "Management Group Contributor" \
+  --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+
+# Assign Contributor role (required for ARM deployments)
+az role assignment create \
+  --assignee "$SP_OBJECT_ID" \
+  --role "Contributor" \
+  --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+```
+
+#### Verifying Role Assignments
+
+```bash
+az role assignment list \
+  --assignee "$SP_OBJECT_ID" \
+  --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG" \
+  --output table
+```
+
+### For Interactive Users (Local Deployment)
+
+For local deployments using Azure CLI, the signed-in user needs:
+- **Owner** role at the Tenant Root Management Group, OR
+- **Global Administrator** role in Azure AD (automatically grants management group permissions)
 
 ## Configuration
 
@@ -162,9 +212,18 @@ After deployment, verify the hierarchy:
 
 ### Common Issues
 
-1. **Permission Denied**
-   - Ensure you have Owner or Management Group Contributor role at Tenant Root
-   - Global Administrators automatically have these permissions
+1. **Permission Denied / Authorization Failed for Template Resource**
+   
+   If you see an error like:
+   ```
+   Authorization failed for template resource 'mg-platform' of type 'Microsoft.Resources/deployments'.
+   The client does not have permission to perform action 'Microsoft.Resources/deployments/write'
+   at scope '/providers/Microsoft.Management/managementGroups/mg-xxx/providers/Microsoft.Resources/deployments/mg-platform'
+   ```
+   
+   This is a **chicken-and-egg problem**: The deployment tries to create nested ARM deployments at management group scopes that don't exist yet. The `Management Group Contributor` role alone doesn't include `Microsoft.Resources/deployments/write` permission.
+   
+   **Solution**: Assign both `Management Group Contributor` AND `Contributor` roles at the Tenant Root Management Group. See [RBAC Requirements](#rbac-requirements) for details.
 
 2. **Parent Not Found**
    - Verify management groups are listed in correct order (parents before children)

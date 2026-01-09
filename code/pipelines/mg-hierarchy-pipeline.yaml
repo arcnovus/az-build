@@ -1,5 +1,39 @@
 # Azure Pipeline to deploy Management Group Hierarchy
 # This pipeline deploys the mg-hierarchy Bicep template at the management group scope
+#
+# =============================================================================
+# RBAC REQUIREMENTS
+# =============================================================================
+# The service principal used by the Azure service connection requires BOTH of
+# the following roles assigned at the Tenant Root Management Group:
+#
+#   1. Management Group Contributor - To create/update/delete management groups
+#   2. Contributor - For Microsoft.Resources/deployments/write permission
+#
+# Why both roles are needed:
+#   The Management Group Contributor role alone does NOT include the
+#   Microsoft.Resources/deployments/write permission. ARM deployments create
+#   deployment resources at each management group scope. Since child management
+#   groups don't exist during initial deployment, these permissions must be
+#   inherited from the Tenant Root Group via the Contributor role.
+#
+# To assign these roles, run (as Owner/User Access Administrator):
+#
+#   SP_OBJECT_ID="<service-principal-object-id>"
+#   TENANT_ROOT_MG=$(az account management-group list \
+#     --query "[?displayName=='Tenant Root Group'].name" -o tsv)
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Management Group Contributor" \
+#     --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Contributor" \
+#     --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+#
+# See docs/Management-Group-Hierarchy/Creating-Management-Group-Hierarchy.md
+# for full documentation.
+# =============================================================================
 
 trigger: none
 pr: none
