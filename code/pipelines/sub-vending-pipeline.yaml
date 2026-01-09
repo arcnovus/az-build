@@ -263,7 +263,7 @@ stages:
                         fi
                       fi
 
-                      az deployment mg create \
+                      az deployment tenant create \
                         --name "sub-vending-$(Build.BuildNumber)" \
                         --management-group-id "$(azureTenantId)" \
                         --location "$(deploymentLocation)" \
