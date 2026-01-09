@@ -127,6 +127,8 @@ resource mgSubscriptionAssociationExisting 'Microsoft.Management/managementGroup
 // ============================================================================
 
 output subscriptionAliasName string = subscriptionAliasName
-output subscriptionId string = subscriptionAlias.properties.subscriptionId
+output subscriptionId string = !empty(existingSubscriptionId)
+  ? existingSubscriptionId
+  : subscriptionAlias.properties.subscriptionId
 output managementGroupResourceId string = targetMgResourceId
 output isExistingSubscription bool = !empty(existingSubscriptionId)
