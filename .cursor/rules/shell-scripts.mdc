@@ -1,0 +1,22 @@
+---
+description: Shell script execution and documentation preferences
+globs: ["**/*.sh", "**/*.md"]
+alwaysApply: true
+---
+
+# Shell Script Execution
+
+When running shell scripts:
+
+- **Always** use `bash script.sh` to execute shell scripts
+- **Never** use `chmod +x` to make scripts executable before running them
+
+When writing documentation (README, guides, etc.):
+
+- **Always** show `bash script.sh` as the way to run shell scripts
+- **Never** document `chmod +x` or `./script.sh` patterns
+
+Examples:
+- Good: `bash infra/scripts/01-prerequisites-check.sh`
+- Bad: `chmod +x infra/scripts/01-prerequisites-check.sh && ./infra/scripts/01-prerequisites-check.sh`
+- Bad: `./infra/scripts/01-prerequisites-check.sh`

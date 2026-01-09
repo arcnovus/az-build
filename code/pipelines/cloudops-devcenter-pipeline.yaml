@@ -1,6 +1,10 @@
-# Azure Pipeline to deploy Subscription Vending
-# This pipeline deploys the sub-vending Bicep template at the management group scope
-# This pipeline is reusable and can be triggered with parameters
+# Azure Pipeline to deploy DevCenter Infrastructure using Deployment Stacks
+# This pipeline deploys the DevCenter Bicep template as a Deployment Stack at subscription scope
+# DevCenter is a prerequisite for Managed DevOps Pools
+# Prerequisites:
+# - Stage 1: CloudOps subscription created via sub-vending pipeline
+# - Stage 2: CloudOps spoke networking deployed via spoke-networking pipeline (provides subnet for Network Connection)
+# Note: DevCenter is typically deployed once per organization and shared across multiple pools
 
 trigger: none
 pr: none
@@ -11,25 +15,27 @@ pool:
 variables:
   - group: common-variables
   - name: bicepPath
-    value: "code/bicep/sub-vending"
+    value: "code/bicep/cloudops"
   - name: templateFile
-    value: "$(bicepPath)/sub-vending.bicep"
+    value: "$(bicepPath)/devcenter.bicep"
   - name: parametersFile
-    value: "$(bicepPath)/sub-vending.bicepparam"
+    value: "$(bicepPath)/devcenter.bicepparam"
 
 parameters:
-  - name: subscriptionDisplayName
-    displayName: "Subscription Display Name"
+  # Target CloudOps subscription (from Stage 1)
+  - name: subscriptionId
+    displayName: "CloudOps Subscription ID (from sub-vending)"
     type: string
     default: ""
+  # Core naming parameters
   - name: purpose
-    displayName: "Purpose/Project/Workload Name"
+    displayName: "Purpose"
     type: string
-    default: ""
+    default: "devcenter"
   - name: environment
     displayName: "Environment"
     type: string
-    default: ""
+    default: "live"
     values:
       - nonprod
       - dev
@@ -45,34 +51,47 @@ parameters:
   - name: instanceNumber
     displayName: "Instance Number (e.g., 001 for the first instance)"
     type: string
-    default: ""
-  - name: managementGroupId
-    displayName: "Management Group ID"
+    default: "001"
+  - name: location
+    displayName: "Azure Region"
     type: string
-    default: ""
-    values:
-      - $(azureTenantId)
-      - "mg-platform"
-      - "mg-landing-zone"
-      - "mg-sandbox"
-      - "mg-decommissioned"
-      - "mg-management"
-      - "mg-connectivity"
-      - "mg-corp-prod"
-      - "mg-corp-non-prod"
-      - "mg-online-prod"
-      - "mg-online-non-prod"
-  - name: workload
-    displayName: "Workload Type"
-    type: string
-    default: "Production"
-    values:
-      - Production
-      - DevTest
+    default: "canadacentral"
+  # Ownership
   - name: owner
-    displayName: "Owner"
+    displayName: "Owner (e.g., platform-team@example.com)"
     type: string
-    default: "$(defaultOwner)"
+    default: ""
+  - name: managedBy
+    displayName: "Managed By"
+    type: string
+    default: "Bicep"
+  # Spoke networking references (from Stage 2)
+  - name: subnetResourceId
+    displayName: "Subnet Resource ID for Network Connection (from spoke-networking)"
+    type: string
+    default: ""
+  # Monitoring
+  - name: logAnalyticsWorkspaceResourceId
+    displayName: "Log Analytics Workspace Resource ID (from monitoring infrastructure)"
+    type: string
+    default: ""
+  # Deployment Stack settings
+  - name: denySettingsMode
+    displayName: "Deny Settings Mode"
+    type: string
+    default: "denyWriteAndDelete"
+    values:
+      - none
+      - denyDelete
+      - denyWriteAndDelete
+  - name: actionOnUnmanage
+    displayName: "Action on Unmanaged Resources"
+    type: string
+    default: "detachAll"
+    values:
+      - deleteResources
+      - deleteAll
+      - detachAll
   - name: deploymentStage
     displayName: "Pipeline Stage to Run"
     type: string
@@ -84,46 +103,23 @@ parameters:
 
 stages:
   - stage: Validate
-    displayName: "Validate Bicep Template"
+    displayName: "Validate DevCenter Deployment Stack"
     # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
-      - job: ValidateBicep
-        displayName: "Validate Bicep"
+      - job: ValidateStack
+        displayName: "Validate Stack"
         steps:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "Validate Subscription Vending Deployment"
+            displayName: "Validate DevCenter Deployment Stack"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                # Construct billing scope from variable group values
-                BILLING_SCOPE=""
-                if [ -n "$(billingAccountId)" ]; then
-                  if [ -n "$(invoiceSectionId)" ]; then
-                    # MCA billing scope format
-                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/invoiceSections/$(invoiceSectionId)"
-                  elif [ -n "$(enrollmentAccountId)" ]; then
-                    # EA billing scope format
-                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/enrollmentAccounts/$(enrollmentAccountId)"
-                  fi
-                fi
-
                 PARAMS=""
-                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                fi
-                if [ -n "${{ parameters.managementGroupId }}" ]; then
-                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
-                fi
-                if [ -n "$BILLING_SCOPE" ]; then
-                  PARAMS="$PARAMS --parameters billingScope='$BILLING_SCOPE'"
-                fi
-                if [ -n "${{ parameters.workload }}" ]; then
-                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                fi
+                # Core naming parameters
                 if [ -n "${{ parameters.purpose }}" ]; then
                   PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
                 fi
@@ -136,18 +132,33 @@ stages:
                 if [ -n "${{ parameters.instanceNumber }}" ]; then
                   PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                 fi
+                if [ -n "${{ parameters.location }}" ]; then
+                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                fi
+                # Ownership
                 if [ -n "${{ parameters.owner }}" ]; then
                   PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
+                # Spoke networking references
+                if [ -n "${{ parameters.subnetResourceId }}" ]; then
+                  PARAMS="$PARAMS --parameters subnetResourceId='${{ parameters.subnetResourceId }}'"
+                fi
+                # Monitoring
+                if [ -n "${{ parameters.logAnalyticsWorkspaceResourceId }}" ]; then
+                  PARAMS="$PARAMS --parameters logAnalyticsWorkspaceResourceId='${{ parameters.logAnalyticsWorkspaceResourceId }}'"
+                fi
 
-                az deployment mg validate \
-                  --management-group-id $(azureTenantId) \
+                az stack sub validate \
+                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
+                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   $PARAMS
 
   - stage: WhatIf
@@ -167,28 +178,14 @@ stages:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "What-If Subscription Vending Deployment"
+            displayName: "What-If DevCenter Deployment Stack"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                # Construct billing scope from variable group values
-                BILLING_SCOPE=""
-                if [ -n "$(billingAccountId)" ]; then
-                  if [ -n "$(invoiceSectionId)" ]; then
-                    # MCA billing scope format
-                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/invoiceSections/$(invoiceSectionId)"
-                  elif [ -n "$(enrollmentAccountId)" ]; then
-                    # EA billing scope format
-                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/enrollmentAccounts/$(enrollmentAccountId)"
-                  fi
-                fi
-
                 PARAMS=""
-                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                fi
+                # Core naming parameters
                 if [ -n "${{ parameters.purpose }}" ]; then
                   PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
                 fi
@@ -201,31 +198,38 @@ stages:
                 if [ -n "${{ parameters.instanceNumber }}" ]; then
                   PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                 fi
-                if [ -n "${{ parameters.managementGroupId }}" ]; then
-                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                if [ -n "${{ parameters.location }}" ]; then
+                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
                 fi
-                if [ -n "$BILLING_SCOPE" ]; then
-                  PARAMS="$PARAMS --parameters billingScope='$BILLING_SCOPE'"
-                fi
-                if [ -n "${{ parameters.workload }}" ]; then
-                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                fi
+                # Ownership
                 if [ -n "${{ parameters.owner }}" ]; then
                   PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
+                # Spoke networking references
+                if [ -n "${{ parameters.subnetResourceId }}" ]; then
+                  PARAMS="$PARAMS --parameters subnetResourceId='${{ parameters.subnetResourceId }}'"
+                fi
+                # Monitoring
+                if [ -n "${{ parameters.logAnalyticsWorkspaceResourceId }}" ]; then
+                  PARAMS="$PARAMS --parameters logAnalyticsWorkspaceResourceId='${{ parameters.logAnalyticsWorkspaceResourceId }}'"
+                fi
 
-                az deployment mg what-if \
-                  --management-group-id $(azureTenantId) \
+                az stack sub create \
+                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
+                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                  --what-if \
                   $PARAMS
 
   - stage: Deploy
-    displayName: "Deploy Subscription Vending"
+    displayName: "Deploy DevCenter Deployment Stack"
     dependsOn:
       - Validate
       - WhatIf
@@ -237,9 +241,9 @@ stages:
         eq('${{ parameters.deploymentStage }}', 'Deploy')
       )
     jobs:
-      - deployment: DeploySubscriptionVending
-        displayName: "Deploy Subscription Vending"
-        environment: "subscription-vending"
+      - deployment: DeployDevCenterStack
+        displayName: "Deploy DevCenter Stack"
+        environment: "cloudops-devcenter"
         strategy:
           runOnce:
             deploy:
@@ -247,28 +251,14 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: "Deploy Subscription Vending"
+                  displayName: "Deploy DevCenter Deployment Stack"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      # Construct billing scope from variable group values
-                      BILLING_SCOPE=""
-                      if [ -n "$(billingAccountId)" ]; then
-                        if [ -n "$(invoiceSectionId)" ]; then
-                          # MCA billing scope format
-                          BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/invoiceSections/$(invoiceSectionId)"
-                        elif [ -n "$(enrollmentAccountId)" ]; then
-                          # EA billing scope format
-                          BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/enrollmentAccounts/$(enrollmentAccountId)"
-                        fi
-                      fi
-
                       PARAMS=""
-                      if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                        PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                      fi
+                      # Core naming parameters
                       if [ -n "${{ parameters.purpose }}" ]; then
                         PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
                       fi
@@ -281,26 +271,32 @@ stages:
                       if [ -n "${{ parameters.instanceNumber }}" ]; then
                         PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
                       fi
-                      if [ -n "${{ parameters.managementGroupId }}" ]; then
-                        PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
+                      if [ -n "${{ parameters.location }}" ]; then
+                        PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
                       fi
-                      if [ -n "$BILLING_SCOPE" ]; then
-                        PARAMS="$PARAMS --parameters billingScope='$BILLING_SCOPE'"
-                      fi
-                      if [ -n "${{ parameters.workload }}" ]; then
-                        PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                      fi
+                      # Ownership
                       if [ -n "${{ parameters.owner }}" ]; then
                         PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                       fi
                       if [ -n "${{ parameters.managedBy }}" ]; then
                         PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                       fi
+                      # Spoke networking references
+                      if [ -n "${{ parameters.subnetResourceId }}" ]; then
+                        PARAMS="$PARAMS --parameters subnetResourceId='${{ parameters.subnetResourceId }}'"
+                      fi
+                      # Monitoring
+                      if [ -n "${{ parameters.logAnalyticsWorkspaceResourceId }}" ]; then
+                        PARAMS="$PARAMS --parameters logAnalyticsWorkspaceResourceId='${{ parameters.logAnalyticsWorkspaceResourceId }}'"
+                      fi
 
-                      az deployment mg create \
-                        --name 'sub-vending-$(Build.BuildNumber)' \
-                        --management-group-id $(azureTenantId) \
+                      az stack sub create \
+                        --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                        --subscription "${{ parameters.subscriptionId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
+                        --deny-settings-mode ${{ parameters.denySettingsMode }} \
+                        --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
+                        --yes \
                         $PARAMS

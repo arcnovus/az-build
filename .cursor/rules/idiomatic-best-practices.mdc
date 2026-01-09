@@ -1,0 +1,71 @@
+---
+description: Prefer idiomatic best practices over exotic solutions - verify with recent documentation
+alwaysApply: true
+---
+
+# Idiomatic Best Practices Preference
+
+When implementing solutions or making technical decisions:
+
+## General Principle
+
+**ALWAYS** prefer idiomatic, well-established best practices over exotic, custom, or overly tailored solutions.
+
+- Choose solutions that are widely recognized and documented in the community
+- Prefer standard library features and well-maintained, popular libraries over custom implementations
+- Use patterns and approaches that other developers will recognize and understand
+- Avoid reinventing the wheel or creating unnecessary abstractions
+
+## Verification and Research
+
+**ALWAYS** verify best practices by consulting current documentation and authoritative sources.
+
+When implementing a solution or choosing an approach:
+
+1. **Search for current best practices** using web search before implementing
+2. **Prefer documentation written in the last 12-18 months** when available
+3. **Consult official documentation** from framework/library maintainers first
+4. **Check community consensus** through Stack Overflow, GitHub discussions, or official forums
+5. **Verify patterns** are still current and not deprecated
+
+## When to Use Web Search
+
+Use web search to confirm best practices when:
+
+- Implementing a new feature or pattern you haven't used recently
+- Choosing between multiple approaches to solve a problem
+- Using a framework, library, or language feature for the first time
+- Encountering conflicting advice or outdated patterns
+- Deciding between standard library vs. third-party solutions
+- Evaluating architectural patterns or design decisions
+
+## Anti-Patterns to Avoid
+
+- Creating custom implementations when standard solutions exist
+- Using deprecated or outdated patterns without checking for modern alternatives
+- Implementing complex workarounds instead of using built-in features
+- Choosing exotic libraries over well-established, maintained alternatives
+- Making decisions based solely on personal preference without verifying current best practices
+- Ignoring official documentation in favor of blog posts or tutorials without checking recency
+
+## Examples
+
+| Bad (Exotic/Custom) | Good (Idiomatic) | Why |
+|---------------------|------------------|-----|
+| Custom state management solution | Use TanStack Query or server-side state management | Well-tested, documented, maintainable, reduces client-side state complexity |
+| Custom authentication implementation | Use established auth library/framework with security-first design | Security best practices, maintained, reduces attack surface |
+| Manual dependency injection container | Use framework's built-in DI or established library | Standard pattern, well-documented |
+| Custom HTTP client wrapper | Use standard library `fetch` or established HTTP client | Idiomatic, widely understood |
+| Custom date/time manipulation | Use established library (date-fns, moment, etc.) | Handles edge cases, timezone issues |
+| Reinventing common algorithms | Use standard library or well-tested library | Proven, optimized |
+| Custom build tooling | Use established build tools (webpack, vite, etc.) | Community support, documentation |
+
+## Best Practices
+
+1. **Research First**: Before implementing, search for current best practices and verify with recent documentation
+2. **Official Sources**: Prioritize official documentation from maintainers over third-party tutorials
+3. **Recency Matters**: Prefer documentation and examples from the last 12-18 months when available
+4. **Community Consensus**: When multiple approaches exist, choose the one with broader community adoption
+5. **Standard Library First**: Prefer standard library features over third-party solutions when functionality is equivalent
+6. **Maintainability**: Choose solutions that future developers (including yourself) will understand and maintain easily
+7. **Documentation Quality**: Prefer solutions with good, current documentation over those with outdated or sparse docs

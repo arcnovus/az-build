@@ -9,6 +9,7 @@ pool:
 
 variables:
   - group: common-variables
+  - group: mg-hierarchy-variables
   - name: bicepPath
     value: "code/bicep/mg-hierarchy"
   - name: templateFile
@@ -16,13 +17,26 @@ variables:
   - name: parametersFile
     value: "$(bicepPath)/mg-hierarchy.bicepparam"
 
+parameters:
+  - name: deploymentStage
+    displayName: "Pipeline Stage to Run"
+    type: string
+    default: "WhatIf"
+    values:
+      - Validation
+      - WhatIf
+      - Deploy
+
 stages:
   - stage: Validate
     displayName: "Validate Bicep Template"
+    # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
       - job: ValidateBicep
         displayName: "Validate Bicep"
         steps:
+          - checkout: self
+
           - task: AzureCLI@2
             displayName: "Validate Management Group Deployment"
             inputs:
@@ -35,15 +49,26 @@ stages:
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --parameters tenantRootManagementGroupId=$(azureTenantId)
+                  --parameters tenantRootManagementGroupId=$(azureTenantId) \
+                  --parameters orgName="$(orgName)" \
+                  --parameters orgDisplayName="$(orgDisplayName)"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
-    dependsOn: Validate
+    dependsOn:
+      - Validate
+    # Runs for: WhatIf, Deploy
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        in('${{ parameters.deploymentStage }}', 'WhatIf', 'Deploy')
+      )
     jobs:
       - job: WhatIfAnalysis
         displayName: "What-If"
         steps:
+          - checkout: self
+
           - task: AzureCLI@2
             displayName: "What-If Management Group Deployment"
             inputs:
@@ -56,11 +81,22 @@ stages:
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --parameters tenantRootManagementGroupId=$(azureTenantId)
+                  --parameters tenantRootManagementGroupId=$(azureTenantId) \
+                  --parameters orgName="$(orgName)" \
+                  --parameters orgDisplayName="$(orgDisplayName)"
 
   - stage: Deploy
     displayName: "Deploy Management Group Hierarchy"
-    dependsOn: WhatIf
+    dependsOn:
+      - Validate
+      - WhatIf
+    # Runs for: Deploy only
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        in(dependencies.WhatIf.result, 'Succeeded', 'Skipped'),
+        eq('${{ parameters.deploymentStage }}', 'Deploy')
+      )
     jobs:
       - deployment: DeployMgHierarchy
         displayName: "Deploy MG Hierarchy"
@@ -84,4 +120,6 @@ stages:
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
-                        --parameters tenantRootManagementGroupId=$(azureTenantId)
+                        --parameters tenantRootManagementGroupId=$(azureTenantId) \
+                        --parameters orgName="$(orgName)" \
+                        --parameters orgDisplayName="$(orgDisplayName)"

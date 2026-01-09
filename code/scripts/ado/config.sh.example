@@ -1,0 +1,163 @@
+#!/bin/bash
+# =============================================================================
+# Configuration File Template
+# =============================================================================
+# Copy this file to config.sh and fill in your values.
+# config.sh is gitignored and should never be committed.
+#
+# Usage:
+#   cp config.sh.example config.sh
+#   # Edit config.sh with your values
+#   bash check-prerequisites.sh   # Verify configuration
+#   bash create-variable-groups.sh  # Create Azure DevOps variable groups
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+# Azure Active Directory / Entra ID Configuration
+# =============================================================================
+# Your Azure AD tenant ID (GUID format)
+# Find via: az account show --query tenantId -o tsv
+export AAD_TENANT_ID=""
+
+# =============================================================================
+# Azure DevOps Configuration
+# =============================================================================
+# Personal Access Token (PAT)
+# Create at: https://dev.azure.com/{organization}/_usersSettings/tokens
+#
+# Required PAT Permissions:
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │ Scope                      │ Permission      │ Purpose                             │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │ Variable Groups            │ Read & Manage   │ Create/update variable groups       │
+# │ (under Pipelines)          │                 │                                     │
+# ├─────────────────────────────────────────────────────────────────────────────┤
+# │ Project and Team           │ Read            │ List projects, verify access        │
+# │ (under Project)            │                 │                                     │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+# Optional PAT Permissions (for additional automation):
+# ┌─────────────────────────────────────────────────────────────────────────────┐
+# │ Build                      │ Read & Execute  │ Trigger/manage pipelines            │
+# │ Service Connections        │ Read & Query    │ Verify service connections          │
+# │ Environment                │ Read & Manage   │ Manage deployment environments      │
+# └─────────────────────────────────────────────────────────────────────────────┘
+#
+# Recommended: Set expiration to 90-180 days and rotate regularly
+#
+# Security Best Practices:
+#   - Set expiration to 90-180 days maximum
+#   - Rotate tokens regularly before expiration
+#   - Use the minimum required permissions
+#   - Never commit this file to source control
+#
+export ADO_PAT_TOKEN=""
+
+# Organization URL (e.g., https://dev.azure.com/myorg)
+export ADO_ORGANIZATION_URL=""
+
+# Project name where pipelines and variable groups will be created
+export ADO_PROJECT_NAME=""
+
+# =============================================================================
+# Azure Billing Configuration (for Subscription Vending)
+# =============================================================================
+# These are used for creating new subscriptions via the sub-vending pipeline
+# Find via Azure Portal > Cost Management + Billing > Billing scopes
+#
+# The billing scope is constructed as:
+#   - MCA: /providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}
+#   - EA:  /providers/Microsoft.Billing/billingAccounts/{billingAccountId}/enrollmentAccounts/{enrollmentAccountId}
+#
+# IMPORTANT: Provide either INVOICE_SECTION_ID (for MCA) or ENROLLMENT_ACCOUNT_ID (for EA), not both
+
+# Billing Account ID (required)
+# For MCA: GUID format (e.g., "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:...")
+# For EA:  Numeric format (e.g., "1234567")
+export BILLING_ACCOUNT_ID=""
+
+# Billing Profile ID (optional, for reference only - not used in billing scope)
+export BILLING_PROFILE_ID=""
+
+# Invoice Section ID - for Microsoft Customer Agreement (MCA)
+# Leave empty if using Enterprise Agreement (EA)
+export INVOICE_SECTION_ID=""
+
+# Enrollment Account ID - for Enterprise Agreement (EA)
+# Leave empty if using Microsoft Customer Agreement (MCA)
+export ENROLLMENT_ACCOUNT_ID=""
+
+# =============================================================================
+# Variable Group Configuration (for common-variables group)
+# =============================================================================
+# Name of the Azure service connection in Azure DevOps
+# This should match a service connection you've created in your project
+export AZURE_SERVICE_CONNECTION_NAME="azure-infra-connection"
+
+# Default deployment location for Azure resources
+export DEPLOYMENT_LOCATION="canadacentral"
+
+# Default location code for naming convention (e.g., cac for canadacentral)
+export DEFAULT_LOCATION_CODE="cac"
+
+# Default owner for infrastructure resources (e.g., platform team email)
+export DEFAULT_OWNER="platform-team@example.com"
+
+# What manages this infrastructure (typically "Bicep")
+export MANAGED_BY="Bicep"
+
+# Default deployment stack deny settings mode
+# Controls what operations are blocked on Azure deployment stacks to prevent accidental modifications
+# Options:
+#   - none: No restrictions (allows all operations)
+#   - denyDelete: Prevents deletion of the deployment stack and its resources
+#   - denyWriteAndDelete: Prevents both write operations and deletion (most restrictive)
+# Effect: When set to denyWriteAndDelete, the deployment stack cannot be modified or deleted
+#         without first updating the deny settings. This protects infrastructure from accidental changes.
+export DEFAULT_DENY_SETTINGS_MODE="denyWriteAndDelete"
+
+# Default action on unmanaged resources when deployment stack is deleted
+# Controls what happens to resources that were previously managed by a deployment stack
+# but are no longer included in the stack definition when the stack is deleted
+# Options:
+#   - deleteResources: Deletes all resources that are no longer in the stack definition
+#   - deleteAll: Deletes all resources managed by the stack, regardless of current definition
+#   - detachAll: Removes the stack but leaves all resources intact (safest option)
+# Effect: When set to detachAll, deleting a deployment stack will not delete any resources,
+#         they will simply be detached from stack management. This prevents accidental data loss.
+export DEFAULT_ACTION_ON_UNMANAGE="detachAll"
+
+# =============================================================================
+# Subscription Names (used by lib.sh)
+# =============================================================================
+# These names are used to look up subscription IDs dynamically
+export MANAGEMENT_SUBSCRIPTION_NAME="Management"
+export CONNECTIVITY_SUBSCRIPTION_NAME="Connectivity"
+
+# =============================================================================
+# Management Group Configuration
+# =============================================================================
+# Root management group name (created under Tenant Root Group)
+export ROOT_MG_NAME="mg-organization"
+export ROOT_MG_DISPLAY_NAME="Organization Root"
+
+# =============================================================================
+# Organization Configuration (for mg-hierarchy-variables group)
+# =============================================================================
+# Organization name used for management group IDs (e.g., "contoso" -> "mg-contoso")
+export ORG_NAME="org"
+
+# Organization display name shown in Azure Portal
+export ORG_DISPLAY_NAME="Organization Name"
+
+# =============================================================================
+# Monitoring Configuration (for monitoring-variables group)
+# =============================================================================
+# Monitoring subscription ID (set after subscription is created via sub-vending)
+# Leave empty during initial setup; update after monitoring subscription exists
+export MONITORING_SUBSCRIPTION_ID=""
+
+# Log Analytics workspace data retention in days (30-730)
+export DATA_RETENTION_DAYS="60"
