@@ -1,6 +1,34 @@
 # Azure Pipeline to deploy Subscription Vending
 # This pipeline deploys the sub-vending Bicep template at the management group scope
 # This pipeline is reusable and can be triggered with parameters
+#
+# =============================================================================
+# RBAC REQUIREMENTS
+# =============================================================================
+# The service principal used by the Azure service connection requires:
+#
+#   1. Owner - At Tenant Root MG for subscription creation and MG assignment
+#   2. Billing Permissions - Invoice Section Contributor (MCA) or
+#                            Enrollment Account Administrator (EA)
+#
+# Azure RBAC assignment:
+#
+#   SP_OBJECT_ID="<service-principal-object-id>"
+#   TENANT_ROOT_MG=$(az account management-group list \
+#     --query "[?displayName=='Tenant Root Group'].name" -o tsv)
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Owner" \
+#     --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+#
+# Billing permissions must be assigned via Azure Portal:
+#   1. Go to Cost Management + Billing
+#   2. Navigate to your billing account/invoice section
+#   3. Add the SP as Invoice Section Contributor (MCA) or
+#      Enrollment Account Administrator (EA)
+#
+# See docs/RBAC-Requirements.md for full documentation.
+# =============================================================================
 
 trigger: none
 pr: none

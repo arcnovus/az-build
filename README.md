@@ -35,7 +35,35 @@ Sequential deployment pipelines for ordered infrastructure provisioning:
 - Azure subscription with appropriate permissions
 - Azure DevOps organization and project
 - Azure CLI or PowerShell with Azure modules
+- **Service Principal with required RBAC permissions** - See [RBAC Requirements](docs/RBAC-Requirements.md)
+
+## Documentation
+
+- [RBAC Requirements](docs/RBAC-Requirements.md) - Complete guide to service principal permissions
+- [Management Group Hierarchy](docs/Management-Group-Hierarchy.md) - Creating and managing management groups
+- [Hub Infrastructure](docs/Hub-Infrastructure.md) - Hub networking setup
+- [Spoke Infrastructure](docs/Spoke-Infrastructure.md) - Spoke networking setup
+- [Monitoring Infrastructure](docs/Monitoring-Infrastructure.md) - Monitoring and observability
+- [Subscription Vending](docs/Subscription-Vending.md) - Automated subscription provisioning
+- [CloudOps](docs/CloudOps.md) - DevOps agent pools and automation
 
 ## Deployment
 
 Run the pipelines in numerical order to ensure proper dependency management and resource provisioning.
+
+### Initial Setup: Service Principal Permissions
+
+Before running any pipelines, ensure your service principal has the required RBAC permissions. For a simplified initial setup:
+
+```bash
+SP_OBJECT_ID="<your-service-principal-object-id>"
+TENANT_ROOT_MG=$(az account management-group list --query "[?displayName=='Tenant Root Group'].name" -o tsv)
+
+# Assign Owner at Tenant Root MG (covers most deployment scenarios)
+az role assignment create \
+  --assignee "$SP_OBJECT_ID" \
+  --role "Owner" \
+  --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+```
+
+See [RBAC Requirements](docs/RBAC-Requirements.md) for detailed per-pipeline permissions.

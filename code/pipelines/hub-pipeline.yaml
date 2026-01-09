@@ -1,6 +1,32 @@
 # Azure Pipeline to deploy Hub Infrastructure using Deployment Stacks
 # This pipeline deploys the hub Bicep template as a Deployment Stack at subscription scope
 # Deploys hub networking infrastructure including VNet, Network Watcher, Private DNS, AVNM, and optional resources
+#
+# =============================================================================
+# RBAC REQUIREMENTS
+# =============================================================================
+# The service principal used by the Azure service connection requires:
+#
+#   1. Contributor - On the hub/connectivity subscription
+#   2. Network Contributor - On the connectivity management group (for AVNM)
+#   3. User Access Administrator - If deploying RBAC-enabled resources (Key Vault)
+#
+# Assignment commands:
+#
+#   SP_OBJECT_ID="<service-principal-object-id>"
+#   SUBSCRIPTION_ID="<connectivity-subscription-id>"
+#   CONNECTIVITY_MG="mg-connectivity"
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Contributor" \
+#     --scope "/subscriptions/$SUBSCRIPTION_ID"
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Network Contributor" \
+#     --scope "/providers/Microsoft.Management/managementGroups/$CONNECTIVITY_MG"
+#
+# See docs/RBAC-Requirements.md for full documentation.
+# =============================================================================
 
 trigger: none
 pr: none

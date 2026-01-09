@@ -2,6 +2,35 @@
 # This pipeline deploys the spoke-networking Bicep template as a Deployment Stack at subscription scope
 # Deploys spoke networking infrastructure including VNet, Private DNS link, and optional IPAM allocation
 # AVNM automatically connects spokes to hub when in the connectivity management group scope
+#
+# =============================================================================
+# RBAC REQUIREMENTS
+# =============================================================================
+# The service principal used by the Azure service connection requires:
+#
+#   1. Contributor - On the spoke subscription (for VNet and resources)
+#   2. Network Contributor - On the hub resource group (for Private DNS Zone link)
+#   3. Contributor - On the hub resource group (if using IPAM allocation)
+#
+# This is a cross-subscription deployment, so permissions are needed on both:
+#
+#   SP_OBJECT_ID="<service-principal-object-id>"
+#   SPOKE_SUBSCRIPTION_ID="<spoke-subscription-id>"
+#   HUB_SUBSCRIPTION_ID="<hub-subscription-id>"
+#   HUB_RESOURCE_GROUP="rg-hub-live-cac-001"
+#
+#   # Spoke subscription
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Contributor" \
+#     --scope "/subscriptions/$SPOKE_SUBSCRIPTION_ID"
+#
+#   # Hub resource group (for DNS zone link and IPAM)
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Network Contributor" \
+#     --scope "/subscriptions/$HUB_SUBSCRIPTION_ID/resourceGroups/$HUB_RESOURCE_GROUP"
+#
+# See docs/RBAC-Requirements.md for full documentation.
+# =============================================================================
 
 trigger: none
 pr: none

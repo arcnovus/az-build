@@ -1,6 +1,31 @@
 # Azure Pipeline to deploy Governance Compliance Policies using Deployment Stacks
 # This pipeline deploys the governance Bicep template as a Deployment Stack at management group scope
 # Assigns Microsoft Cloud Security Benchmark and Canada Federal PBMM policies in audit mode
+#
+# =============================================================================
+# RBAC REQUIREMENTS
+# =============================================================================
+# The service principal used by the Azure service connection requires:
+#
+#   1. Resource Policy Contributor - Create/update policy assignments
+#   2. User Access Administrator - Grant permissions to policy managed identities
+#   3. Contributor - For Microsoft.Resources/deployments/write permission
+#
+# Assign at the target management group scope:
+#
+#   SP_OBJECT_ID="<service-principal-object-id>"
+#   TARGET_MG="mg-arcnovus"
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Resource Policy Contributor" \
+#     --scope "/providers/Microsoft.Management/managementGroups/$TARGET_MG"
+#
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "User Access Administrator" \
+#     --scope "/providers/Microsoft.Management/managementGroups/$TARGET_MG"
+#
+# See docs/RBAC-Requirements.md for full documentation.
+# =============================================================================
 
 trigger: none
 pr: none
