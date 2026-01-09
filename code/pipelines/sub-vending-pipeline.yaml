@@ -97,6 +97,10 @@ parameters:
     values:
       - Production
       - DevTest
+  - name: managedBy
+    displayName: "Managed By"
+    type: string
+    default: "$(managedBy)"
   - name: owner
     displayName: "Owner"
     type: string
