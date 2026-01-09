@@ -1,5 +1,5 @@
 # Azure Pipeline to deploy Subscription Vending
-# This pipeline deploys the sub-vending Bicep template at the management group scope
+# This pipeline deploys the sub-vending Bicep template at the tenant scope
 # This pipeline is reusable and can be triggered with parameters
 #
 # =============================================================================
@@ -163,8 +163,7 @@ stages:
                   fi
                 fi
 
-                az deployment mg validate \
-                  --management-group-id "$(azureTenantId)" \
+                az deployment tenant validate \
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
                   --parameters "$(parametersFile)" \
@@ -214,8 +213,7 @@ stages:
                   fi
                 fi
 
-                az deployment mg what-if \
-                  --management-group-id "$(azureTenantId)" \
+                az deployment tenant what-if \
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
                   --parameters "$(parametersFile)" \
@@ -271,9 +269,8 @@ stages:
                         fi
                       fi
 
-                      az deployment mg create \
+                      az deployment tenant create \
                         --name "sub-vending-$(Build.BuildNumber)" \
-                        --management-group-id "$(azureTenantId)" \
                         --location "$(deploymentLocation)" \
                         --template-file "$(templateFile)" \
                         --parameters "$(parametersFile)" \
