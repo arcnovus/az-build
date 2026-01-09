@@ -37,7 +37,7 @@ var subscriptionAliasName = 'subcr-${workloadAlias}-${environment}-${locationCod
 // Use AVM sub-vending module to create subscription and assign to management group
 // Note: Using 0.4.1 (stable) - versions 0.5.x have reported issues with API version 2025-04-01
 // for managementGroups. Version 0.4.1 is sufficient since we don't need IPAM features.
-module subVending 'br/public:avm/ptn/lz/sub-vending:0.4.1' = {
+module subVending 'br/public:avm/ptn/lz/sub-vending:0.3.8' = {
   name: 'sub-vending-${subscriptionAliasName}'
   params: {
     subscriptionDisplayName: subscriptionDisplayName
