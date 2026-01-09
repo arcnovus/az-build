@@ -134,7 +134,7 @@ stages:
     jobs:
       - deployment: DeployMgHierarchy
         displayName: "Deploy MG Hierarchy"
-        environment: "management-groups"
+        environment: "live"
         strategy:
           runOnce:
             deploy:
