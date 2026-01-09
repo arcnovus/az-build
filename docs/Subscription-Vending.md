@@ -4,7 +4,9 @@ This section provides comprehensive documentation for creating and managing Azur
 
 ## Overview
 
-Subscription vending automates the creation of Azure subscriptions with consistent naming conventions, proper management group placement, and standardized tagging. It uses the Azure Verified Module (AVM) sub-vending pattern module and is deployed at the management group scope.
+Subscription vending automates the creation of Azure subscriptions with consistent naming conventions, proper management group placement, and standardized tagging. It uses direct Bicep resource definitions and is deployed at the tenant scope.
+
+> **Note**: This implementation uses direct Azure resource definitions rather than the Azure Verified Module (AVM) sub-vending pattern. See the Bicep template comments for details on why this approach was chosen.
 
 ## Documentation Structure
 

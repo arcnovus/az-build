@@ -33,15 +33,13 @@ az account management-group subscription list \
 Check the deployment that created the subscription:
 
 ```bash
-# List management group deployments
-az deployment mg list \
-  --management-group-id <tenant-id-or-management-group-id> \
+# List tenant-level deployments
+az deployment tenant list \
   --output table
 
 # Get specific deployment details
-az deployment mg show \
-  --name 'sub-vending-hub-live-cac-001' \
-  --management-group-id <tenant-id-or-management-group-id> \
+az deployment tenant show \
+  --name 'sub-vending-<build-number>' \
   --output json
 ```
 
@@ -260,27 +258,27 @@ az consumption usage list \
   --query "[?tags.Project=='hub']"
 ```
 
-## Updating AVM Module
+## Implementation Notes
 
-When a new version of the Azure Verified Module sub-vending pattern is available:
+This implementation uses direct Bicep resource definitions rather than the Azure Verified Module (AVM) sub-vending pattern. The AVM module was abandoned due to a critical bug where it referenced an invalid API version (`2025-04-01`) for `Microsoft.Management/managementGroups`.
 
-1. **Check Current Version**: Review `sub-vending.bicep` for the current module version
-2. **Find Latest Version**: Check the [Azure/bicep-registry-modules](https://github.com/Azure/bicep-registry-modules) repository
-3. **Review Changes**: Check the module's `version.json` and changelog
-4. **Update Reference**: Update the module version in the Bicep file
-5. **Test**: Run the pipeline with `Validation` and `WhatIf` stages
-6. **Deploy**: Run the pipeline with `Deploy` stage for new subscriptions
+### API Versions Used
 
-**Note**: Updating the AVM module version only affects new subscriptions. Existing subscriptions are not modified.
+| Resource Type | API Version | Purpose |
+|---------------|-------------|---------|
+| `Microsoft.Subscription/aliases` | `2024-08-01-preview` | Subscription creation |
+| `Microsoft.Management/managementGroups/subscriptions` | `2024-02-01-preview` | Management group association |
+| `Microsoft.Management/managementGroups` | `2023-04-01` | Management group reference |
 
-Example update:
-```bicep
-// From:
-module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
+### Updating API Versions
 
-// To:
-module subVending 'br/public:avm/ptn/lz/sub-vending:0.6.0' = {
-```
+When updating API versions in the Bicep template:
+
+1. **Check Azure Documentation**: Verify the new API version is available and stable
+2. **Test**: Run the pipeline with `Validation` and `WhatIf` stages
+3. **Deploy**: Run the pipeline with `Deploy` stage for new subscriptions
+
+**Note**: API version updates only affect new deployments. Existing subscriptions are not modified.
 
 ## Troubleshooting
 
@@ -364,4 +362,3 @@ az account show \
 - [Deploying Subscription Vending](Deploying-Subscription-Vending.md)
 - [Azure Subscription Documentation](https://docs.microsoft.com/azure/cost-management-billing/manage/)
 - [Azure Management Groups](https://docs.microsoft.com/azure/governance/management-groups/)
-- [Azure Verified Modules](https://github.com/Azure/bicep-registry-modules)

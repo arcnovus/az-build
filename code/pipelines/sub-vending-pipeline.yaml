@@ -3,6 +3,14 @@
 # This pipeline is reusable and can be triggered with parameters
 #
 # =============================================================================
+# IMPLEMENTATION NOTE
+# =============================================================================
+# This implementation uses direct Bicep resource definitions rather than the
+# Azure Verified Module (AVM) sub-vending pattern. The AVM module was abandoned
+# due to a bug where it referenced an invalid API version (2025-04-01) for
+# Microsoft.Management/managementGroups. See sub-vending.bicep for details.
+#
+# =============================================================================
 # RBAC REQUIREMENTS
 # =============================================================================
 # The service principal used by the Azure service connection requires:

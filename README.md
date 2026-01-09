@@ -10,7 +10,7 @@ A reusable Azure infrastructure foundation using Bicep templates and Azure DevOp
 - **governance/** - Azure Policy definitions and assignments
 - **hub/** - Hub networking (Virtual Networks, Gateways, Firewalls)
 - **cloudops/** - Operational tooling and automation
-- **sub-vending/** - Subscription provisioning and management
+- **sub-vending/** - Subscription provisioning and management (direct Bicep implementation)
 
 ### CI/CD Pipelines (`code/pipelines/`)
 Sequential deployment pipelines for ordered infrastructure provisioning:

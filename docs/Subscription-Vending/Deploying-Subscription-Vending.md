@@ -8,14 +8,14 @@ Before deploying subscription vending, ensure you have:
 
 1. **Azure Tenant Access**: Access to the Azure tenant where subscriptions will be created
 2. **Required Permissions**: 
-   - Owner or Contributor role at the management group scope
+   - Owner role at the Tenant Root Management Group (for subscription alias creation at tenant scope)
    - Subscription creation permissions (typically requires Enrollment Account permissions for EA or Billing Account permissions for MCA)
    - Management group write permissions
 3. **Management Group**: The target management group must exist
 4. **Billing Information**: Billing account details if using EA or MCA (optional for pay-as-you-go)
 5. **Azure CLI**: Installed and configured (for local deployment)
 6. **Azure DevOps**: Access to the pipeline (for automated deployment)
-7. **Service Connection**: Configured in Azure DevOps with appropriate permissions
+7. **Service Connection**: Configured in Azure DevOps with tenant-scope deployment permissions
 
 ## Configuration
 
@@ -26,7 +26,6 @@ The `sub-vending.bicepparam` file contains the deployment configuration:
 ```bicep
 using 'sub-vending.bicep'
 
-param subscriptionDisplayName = 'example-subscription'
 param managementGroupId = 'your-management-group-id'
 param billingScope = ''
 param workload = 'Production'
@@ -36,13 +35,13 @@ param locationCode = 'cac'
 param instanceNumber = '001'
 param owner = 'example-owner'
 param managedBy = 'Bicep'
+param existingSubscriptionId = '' // Optional: provide to move an existing subscription
 ```
 
 ### Step 2: Customize Parameters
 
 | Parameter | Description | Default | Required | Valid Values |
 |-----------|-------------|---------|----------|--------------|
-| `subscriptionDisplayName` | Human-readable subscription name | - | Yes | Any string |
 | `managementGroupId` | Management group ID where subscription will be placed | - | Yes | Valid management group ID |
 | `billingScope` | Billing scope for EA/MCA scenarios | `''` | No | `/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}` |
 | `workload` | Workload type | `Production` | No | `Production`, `DevTest` |
@@ -52,6 +51,9 @@ param managedBy = 'Bicep'
 | `instanceNumber` | Instance identifier | - | Yes | Three-digit string (e.g., `001`) |
 | `owner` | Subscription owner | - | Yes | Email or team name |
 | `managedBy` | Management tool | `Bicep` | No | Any string |
+| `existingSubscriptionId` | Existing subscription ID to move (optional) | `''` | No | Subscription GUID |
+
+> **Note**: The subscription display name is automatically generated from the naming convention: `subcr-<workloadAlias>-<environment>-<locationCode>-<instanceNumber>`
 
 ### Step 3: Understand Subscription Alias
 
@@ -94,7 +96,7 @@ For pay-as-you-go subscriptions, leave `billingScope` empty.
 
 ### Method 1: Azure DevOps Pipeline (Recommended)
 
-The pipeline provides automated validation, what-if analysis, and deployment at the management group scope.
+The pipeline provides automated validation, what-if analysis, and deployment at the tenant scope.
 
 #### Pipeline Stages
 
@@ -111,7 +113,6 @@ The pipeline provides automated validation, what-if analysis, and deployment at 
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
-| Subscription Display Name | Human-readable subscription name | `Hub Infrastructure - Production` |
 | Workload Alias | Workload alias for naming | `hub` |
 | Environment | Target environment | `live` |
 | Location Code | Short location code | `cac` |
@@ -121,6 +122,7 @@ The pipeline provides automated validation, what-if analysis, and deployment at 
 | Workload Type | Production or DevTest | `Production` |
 | Owner | Subscription owner | `platform-team@organization.com` |
 | Managed By | Management tool | `Bicep` |
+| Existing Subscription ID (optional) | Move existing subscription | Subscription GUID |
 | Pipeline Stage to Run | Which stage to run | `WhatIf` or `Deploy` |
 
 5. Review the validation and what-if results
@@ -138,17 +140,15 @@ Configure these in your `common-variables` variable group:
 
 ### Method 2: Azure CLI (Local Deployment)
 
-For local testing or manual deployment at the management group scope.
+For local testing or manual deployment at the tenant scope.
 
 #### Validate Template
 
 ```bash
-az deployment mg validate \
-  --management-group-id <tenant-id-or-management-group-id> \
+az deployment tenant validate \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
-  --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
   --parameters workloadAlias='hub' \
   --parameters environment='live' \
@@ -160,12 +160,10 @@ az deployment mg validate \
 #### What-If Analysis
 
 ```bash
-az deployment mg what-if \
-  --management-group-id <tenant-id-or-management-group-id> \
+az deployment tenant what-if \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
-  --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
   --parameters workloadAlias='hub' \
   --parameters environment='live' \
@@ -177,13 +175,11 @@ az deployment mg what-if \
 #### Deploy
 
 ```bash
-az deployment mg create \
+az deployment tenant create \
   --name 'sub-vending-hub-live-cac-001' \
-  --management-group-id <tenant-id-or-management-group-id> \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
-  --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
   --parameters workloadAlias='hub' \
   --parameters environment='live' \
@@ -195,13 +191,11 @@ az deployment mg create \
 #### Deploy with Billing Scope (EA/MCA)
 
 ```bash
-az deployment mg create \
+az deployment tenant create \
   --name 'sub-vending-hub-live-cac-001' \
-  --management-group-id <tenant-id-or-management-group-id> \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
-  --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
   --parameters billingScope='/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' \
   --parameters workloadAlias='hub' \
@@ -209,6 +203,23 @@ az deployment mg create \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
   --parameters owner='platform-team@organization.com'
+```
+
+#### Move Existing Subscription
+
+```bash
+az deployment tenant create \
+  --name 'sub-vending-move-existing' \
+  --location canadacentral \
+  --template-file code/bicep/sub-vending/sub-vending.bicep \
+  --parameters code/bicep/sub-vending/sub-vending.bicepparam \
+  --parameters managementGroupId='mg-connectivity' \
+  --parameters workloadAlias='hub' \
+  --parameters environment='live' \
+  --parameters locationCode='cac' \
+  --parameters instanceNumber='001' \
+  --parameters owner='platform-team@organization.com' \
+  --parameters existingSubscriptionId='00000000-0000-0000-0000-000000000000'
 ```
 
 ## Verification
@@ -256,17 +267,16 @@ The deployment provides these outputs:
 
 | Output | Description |
 |--------|-------------|
+| `subscriptionAliasName` | The subscription alias name following the naming convention |
 | `subscriptionId` | The subscription ID (GUID) |
-| `subscriptionResourceId` | The full resource ID of the subscription |
-| `subscriptionDisplayName` | The display name of the subscription |
-| `managementGroupId` | The management group where the subscription was placed |
+| `managementGroupResourceId` | The full resource ID of the target management group |
+| `isExistingSubscription` | Boolean indicating if an existing subscription was moved |
 
 **Retrieve outputs from Azure CLI:**
 
 ```bash
-az deployment mg show \
+az deployment tenant show \
   --name 'sub-vending-hub-live-cac-001' \
-  --management-group-id <tenant-id-or-management-group-id> \
   --query properties.outputs \
   --output json
 ```
@@ -278,12 +288,10 @@ az deployment mg show \
 Create a production subscription for hub infrastructure:
 
 ```bash
-az deployment mg create \
+az deployment tenant create \
   --name 'sub-vending-hub-prod-cac-001' \
-  --management-group-id <tenant-id> \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
-  --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
   --parameters workloadAlias='hub' \
   --parameters environment='prod' \
@@ -298,12 +306,10 @@ az deployment mg create \
 Create a DevTest subscription for development workloads:
 
 ```bash
-az deployment mg create \
+az deployment tenant create \
   --name 'sub-vending-app-dev-cac-001' \
-  --management-group-id <tenant-id> \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
-  --parameters subscriptionDisplayName='Application Development - Dev' \
   --parameters managementGroupId='mg-online-non-prod' \
   --parameters workloadAlias='app-dev' \
   --parameters environment='dev' \
@@ -318,12 +324,10 @@ az deployment mg create \
 Create a subscription with EA/MCA billing scope:
 
 ```bash
-az deployment mg create \
+az deployment tenant create \
   --name 'sub-vending-monitoring-prod-cac-001' \
-  --management-group-id <tenant-id> \
   --location canadacentral \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
-  --parameters subscriptionDisplayName='Monitoring Infrastructure - Production' \
   --parameters managementGroupId='mg-management' \
   --parameters billingScope='/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' \
   --parameters workloadAlias='monitoring' \
@@ -334,14 +338,32 @@ az deployment mg create \
   --parameters owner='ops-team@organization.com'
 ```
 
+### Scenario 4: Move Existing Subscription
+
+Move an existing subscription to a management group:
+
+```bash
+az deployment tenant create \
+  --name 'sub-vending-move-existing' \
+  --location canadacentral \
+  --template-file code/bicep/sub-vending/sub-vending.bicep \
+  --parameters managementGroupId='mg-landing-zone' \
+  --parameters workloadAlias='existing-app' \
+  --parameters environment='prod' \
+  --parameters locationCode='cac' \
+  --parameters instanceNumber='001' \
+  --parameters owner='platform-team@organization.com' \
+  --parameters existingSubscriptionId='00000000-0000-0000-0000-000000000000'
+```
+
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Permission Denied**
-   - Ensure you have Owner or Contributor role at the management group scope
+   - Ensure you have Owner role at the Tenant Root Management Group (required for tenant scope deployments)
    - Check you have subscription creation permissions
-   - Verify the service connection has appropriate permissions
+   - Verify the service connection has tenant-scope deployment permissions
    - For EA: Ensure you have Enrollment Account permissions
    - For MCA: Ensure you have Billing Account permissions
 

@@ -7,10 +7,10 @@ Subscription vending provides an automated, standardized way to create Azure sub
 ## Architecture
 
 ```
-Management Group Scope Deployment
+Tenant Scope Deployment
 └── Subscription Alias (subcr-<workloadAlias>-<env>-<loc>-<instance>)
     └── Azure Subscription
-        ├── Display Name
+        ├── Display Name (same as alias)
         ├── Management Group Assignment
         ├── Billing Scope (optional)
         ├── Workload Type (Production/DevTest)
@@ -130,33 +130,25 @@ subcr-<workloadAlias>-<environment>-<locationCode>-<instanceNumber>
 | spoke | Dev | Canada Central | 001 | `subcr-spoke-dev-cac-001` |
 | governance | Nonprod | Canada Central | 001 | `subcr-governance-nonprod-cac-001` |
 
-## Azure Verified Module
+## Implementation Approach
 
-The subscription vending process uses the Azure Verified Module (AVM) sub-vending pattern module:
+This implementation uses direct Bicep resource definitions rather than the Azure Verified Module (AVM) sub-vending pattern.
 
-- **Module**: `br/public:avm/ptn/lz/sub-vending`
-- **Current Version**: `0.5.0`
-- **Type**: Pattern module (landing zone pattern)
+### Why Not AVM?
 
-### Module Features
+The Azure Verified Module `br/public:avm/ptn/lz/sub-vending` was initially used but abandoned due to a critical bug where the module internally references an invalid API version (`2025-04-01`) for `Microsoft.Management/managementGroups`. This caused deployment failures with `InvalidResourceType` errors.
 
-The AVM sub-vending module provides:
+### Current Implementation
 
-- **Subscription Creation**: Creates new Azure subscriptions
-- **Alias Management**: Manages subscription aliases for consistent naming
-- **Management Group Association**: Automatically assigns subscriptions to management groups
-- **Billing Scope Configuration**: Supports EA and MCA billing scenarios
-- **Workload Type Configuration**: Sets Production or DevTest workload type
-- **Tag Application**: Applies standardized tags to subscriptions
-- **Virtual Network Option**: Optional virtual network creation (disabled in this implementation)
+The direct implementation provides:
 
-### Module Configuration
-
-The module is configured with:
-
-- `subscriptionAliasEnabled`: `true` - Enables subscription alias management
-- `subscriptionManagementGroupAssociationEnabled`: `true` - Enables automatic management group assignment
-- `virtualNetworkEnabled`: `false` - Virtual network creation disabled (handled separately)
+- **Subscription Creation**: Uses `Microsoft.Subscription/aliases@2024-08-01-preview`
+- **Management Group Association**: Uses `Microsoft.Management/managementGroups/subscriptions@2024-02-01-preview`
+- **Management Group Reference**: Uses `Microsoft.Management/managementGroups@2023-04-01`
+- **Full Control**: Direct control over API versions and resource definitions
+- **No External Dependencies**: No dependency on external module bugs or version compatibility
+- **Simplified Model**: Tenant scope deployment without nested module complexity
+- **Existing Subscription Support**: Can move existing subscriptions to management groups
 
 ## Integration Points
 
@@ -192,21 +184,24 @@ The default deployment configuration:
 | Billing Scope | Empty (optional) |
 
 **Required Parameters:**
-- `subscriptionDisplayName`
 - `managementGroupId`
 - `workloadAlias`
 - `environment`
 - `instanceNumber`
 - `owner`
 
+**Optional Parameters:**
+- `existingSubscriptionId` - If provided, moves an existing subscription instead of creating a new one
+
 ## Deployment Scope
 
-Subscription vending is deployed at the **management group scope**, which allows:
+Subscription vending is deployed at the **tenant scope**, which allows:
 
-- Creating subscriptions across the organization
+- Creating subscriptions using subscription aliases (requires tenant scope)
 - Assigning subscriptions to any management group
 - Centralized subscription management
 - Consistent deployment process
+- Moving existing subscriptions between management groups
 
 ## Outputs
 
@@ -214,10 +209,10 @@ The deployment provides these outputs:
 
 | Output | Description |
 |--------|-------------|
+| `subscriptionAliasName` | The subscription alias name following the naming convention |
 | `subscriptionId` | The subscription ID (GUID) |
-| `subscriptionResourceId` | The full resource ID of the subscription |
-| `subscriptionDisplayName` | The display name of the subscription |
-| `managementGroupId` | The management group where the subscription was placed |
+| `managementGroupResourceId` | The full resource ID of the target management group |
+| `isExistingSubscription` | Boolean indicating if an existing subscription was moved |
 
 These outputs can be used for:
 - Subsequent deployments that reference the subscription
@@ -305,9 +300,10 @@ Create a subscription for testing and experimentation:
 
 ### Permissions
 
-- **Management Group Scope**: Requires appropriate permissions at the management group scope
+- **Tenant Scope**: Requires appropriate permissions at tenant scope for subscription alias creation
+- **Management Group Scope**: Requires permissions at management group scope for subscription assignment
 - **Billing**: Billing scope configuration may require billing account permissions
-- **Subscription Creation**: Requires subscription creation permissions
+- **Subscription Creation**: Requires subscription creation permissions (Owner at Tenant Root MG)
 
 ### Billing
 
