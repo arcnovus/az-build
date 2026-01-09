@@ -4,6 +4,19 @@
 # =============================================================================
 # This script creates Azure DevOps environments used by deployment pipelines.
 # Environments align with the environment parameter values used across pipelines.
+#
+# Prerequisites:
+#   - Azure CLI with azure-devops extension
+#   - config.sh with ADO_PAT_TOKEN set
+#
+# Required PAT Permissions:
+#   - Environment: Read & Manage (under Pipelines in PAT creation UI)
+#   - Project and Team: Read (under Project in PAT creation UI)
+#
+# Usage:
+#   bash create-environments.sh           # Create all environments
+#   bash create-environments.sh --dry-run # Preview changes
+#   bash create-environments.sh --list    # List existing environments
 # =============================================================================
 
 set -euo pipefail

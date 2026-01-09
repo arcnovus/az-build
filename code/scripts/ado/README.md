@@ -140,10 +140,22 @@ To customize the environments list:
 Create a Personal Access Token at:
 `https://dev.azure.com/{organization}/_usersSettings/tokens`
 
-Required permissions:
-- **Variable Groups**: Read & Manage
-- **Environment**: Read & Manage
-- **Build**: Read (optional, for pipeline integration)
+**Required permissions** (all are necessary for `setup-ado.sh` to work):
+
+| Scope | Permission | Location in PAT UI |
+|-------|------------|-------------------|
+| Variable Groups | Read & Manage | Pipelines → Variable Groups |
+| Environment | Read & Manage | Pipelines → Environment |
+| Project and Team | Read | Project → Read |
+
+**Optional permissions** (for additional automation):
+
+| Scope | Permission | Purpose |
+|-------|------------|---------|
+| Build | Read & Execute | Trigger/manage pipelines |
+| Service Connections | Read & Query | Verify service connections |
+
+> **Tip**: When creating the PAT, expand the "Pipelines" section to find both "Variable Groups" and "Environment" permissions.
 
 ## Configuration
 
@@ -271,10 +283,15 @@ The environment may not exist yet. Run:
 bash create-environments.sh
 ```
 
-### "Access denied"
-Your PAT needs these permissions:
-- Variable Groups: Read & Manage
-- Environment: Read & Manage
+### "Access denied" or "Failed to create environment"
+Your PAT needs these permissions (all under "Pipelines" in the PAT creation UI):
+- **Variable Groups**: Read & Manage
+- **Environment**: Read & Manage
+
+Also required (under "Project"):
+- **Project and Team**: Read
+
+Regenerate your PAT with these permissions and update `config.sh`.
 
 ## Security Notes
 

@@ -34,6 +34,9 @@ export AAD_TENANT_ID=""
 # │ Variable Groups            │ Read & Manage   │ Create/update variable groups       │
 # │ (under Pipelines)          │                 │                                     │
 # ├─────────────────────────────────────────────────────────────────────────────┤
+# │ Environment                │ Read & Manage   │ Create deployment environments      │
+# │ (under Pipelines)          │                 │                                     │
+# ├─────────────────────────────────────────────────────────────────────────────┤
 # │ Project and Team           │ Read            │ List projects, verify access        │
 # │ (under Project)            │                 │                                     │
 # └─────────────────────────────────────────────────────────────────────────────┘
@@ -42,7 +45,6 @@ export AAD_TENANT_ID=""
 # ┌─────────────────────────────────────────────────────────────────────────────┐
 # │ Build                      │ Read & Execute  │ Trigger/manage pipelines            │
 # │ Service Connections        │ Read & Query    │ Verify service connections          │
-# │ Environment                │ Read & Manage   │ Manage deployment environments      │
 # └─────────────────────────────────────────────────────────────────────────────┘
 #
 # Recommended: Set expiration to 90-180 days and rotate regularly

@@ -340,6 +340,9 @@ get_or_create_variable_group() {
 # =============================================================================
 # Helper functions for managing Azure DevOps environments.
 # These are used by the create-environments.sh script.
+#
+# Required PAT Permissions:
+#   - Environment: Read & Manage (under Pipelines in PAT creation UI)
 
 # Check if an environment exists
 environment_exists() {

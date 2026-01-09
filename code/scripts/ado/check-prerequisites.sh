@@ -1,9 +1,9 @@
 #!/bin/bash
 # =============================================================================
-# Azure DevOps Variable Groups - Prerequisites Check
+# Azure DevOps Setup - Prerequisites Check
 # =============================================================================
 # This script checks that all prerequisites are met before running
-# the variable group management scripts.
+# the ADO setup scripts (variable groups and environments).
 # =============================================================================
 
 set -euo pipefail
@@ -215,7 +215,11 @@ check_ado_connection() {
         echo "  Please verify:"
         echo "  - ADO_ORGANIZATION_URL is correct (e.g., https://dev.azure.com/myorg)"
         echo "  - ADO_PAT_TOKEN has sufficient permissions"
-        echo "  - PAT permissions required: Variable Groups (Read & Manage)"
+        echo ""
+        echo "  Required PAT permissions:"
+        echo "    - Variable Groups: Read & Manage (under Pipelines)"
+        echo "    - Environment: Read & Manage (under Pipelines)"
+        echo "    - Project and Team: Read (under Project)"
         echo ""
         return 1
     fi
@@ -228,7 +232,7 @@ check_ado_connection() {
 main() {
     echo ""
     echo "============================================================================="
-    echo "  Azure DevOps Variable Groups - Prerequisites Check"
+    echo "  Azure DevOps Setup - Prerequisites Check"
     echo "============================================================================="
     echo ""
     

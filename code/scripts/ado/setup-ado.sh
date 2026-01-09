@@ -7,6 +7,19 @@
 #   2. Creating all deployment environments (via create-environments.sh)
 #
 # This provides a single entry point for complete ADO setup.
+#
+# Prerequisites:
+#   - Azure CLI with azure-devops extension
+#   - config.sh with ADO_PAT_TOKEN set
+#
+# Required PAT Permissions:
+#   - Variable Groups: Read & Manage (under Pipelines in PAT creation UI)
+#   - Environment: Read & Manage (under Pipelines in PAT creation UI)
+#   - Project and Team: Read (under Project in PAT creation UI)
+#
+# Usage:
+#   bash setup-ado.sh           # Run complete setup
+#   bash setup-ado.sh --dry-run # Preview changes without making them
 # =============================================================================
 
 set -euo pipefail
