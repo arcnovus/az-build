@@ -12,11 +12,12 @@
 # =============================================================================
 # RBAC REQUIREMENTS
 # =============================================================================
-# The service principal used by the Azure service connection requires BOTH of
-# the following roles assigned at the Tenant Root Management Group:
+# The service principal used by the Azure service connection requires:
 #
-#   1. Management Group Contributor - To create/update/delete management groups
-#   2. Contributor - For Microsoft.Resources/deployments/write permission
+#   1. Contributor at Tenant Root (/) - For tenant-scoped deployments
+#   2. Management Group Contributor at Tenant Root MG - To create/update MGs
+#
+# Note: Tenant Root (/) is different from Tenant Root Management Group!
 #
 # To assign these roles, run (as Owner/User Access Administrator):
 #
@@ -24,12 +25,13 @@
 #   TENANT_ROOT_MG=$(az account management-group list \
 #     --query "[?displayName=='Tenant Root Group'].name" -o tsv)
 #
+#   # Contributor at Tenant Root (for az deployment tenant)
+#   az role assignment create --assignee "$SP_OBJECT_ID" \
+#     --role "Contributor" --scope "/"
+#
+#   # Management Group Contributor at Tenant Root MG
 #   az role assignment create --assignee "$SP_OBJECT_ID" \
 #     --role "Management Group Contributor" \
-#     --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
-#
-#   az role assignment create --assignee "$SP_OBJECT_ID" \
-#     --role "Contributor" \
 #     --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
 #
 # See docs/RBAC-Requirements.md for full documentation.

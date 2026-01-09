@@ -6,7 +6,8 @@ This document outlines all Azure RBAC (Role-Based Access Control) requirements f
 
 | Pipeline | Deployment Scope | Required Roles | Scope |
 |----------|------------------|----------------|-------|
-| mg-hierarchy | Tenant | Management Group Contributor, Contributor | Tenant Root MG |
+| mg-hierarchy | Tenant | Contributor | Tenant Root (`/`) |
+| mg-hierarchy | Tenant | Management Group Contributor | Tenant Root MG |
 | governance | Management Group | Resource Policy Contributor | Target MG |
 | sub-vending | Management Group | Owner (for subscription creation) | Tenant Root MG + Billing |
 | monitoring | Subscription | Contributor | Subscription |
@@ -28,12 +29,15 @@ This document outlines all Azure RBAC (Role-Based Access Control) requirements f
 
 | Role | Scope | Purpose |
 |------|-------|---------|
+| **Contributor** | Tenant Root (`/`) | `Microsoft.Resources/deployments/validate/action` for tenant deployments |
 | **Management Group Contributor** | Tenant Root MG | Create, update, delete management groups |
-| **Contributor** | Tenant Root MG | `Microsoft.Resources/deployments/write` for ARM deployments |
 
-#### Why Both Roles Are Needed
+#### Important: Tenant Root vs Tenant Root Management Group
 
-The `Management Group Contributor` role alone does NOT include `Microsoft.Resources/deployments/write` permission. The `Contributor` role provides this permission at the Tenant Root level, which is inherited to all child scopes.
+- **Tenant Root** (`/`) - Required for `az deployment tenant` commands
+- **Tenant Root Management Group** (`/providers/Microsoft.Management/managementGroups/<tenant-id>`) - Required for management group operations
+
+Both scopes must have appropriate permissions for the mg-hierarchy deployment to work.
 
 #### Assignment Commands
 
@@ -41,16 +45,16 @@ The `Management Group Contributor` role alone does NOT include `Microsoft.Resour
 SP_OBJECT_ID="<service-principal-object-id>"
 TENANT_ROOT_MG=$(az account management-group list --query "[?displayName=='Tenant Root Group'].name" -o tsv)
 
-# Management Group Contributor
-az role assignment create \
-  --assignee "$SP_OBJECT_ID" \
-  --role "Management Group Contributor" \
-  --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
-
-# Contributor (for ARM deployments)
+# Contributor at Tenant Root (for tenant-scoped deployments)
 az role assignment create \
   --assignee "$SP_OBJECT_ID" \
   --role "Contributor" \
+  --scope "/"
+
+# Management Group Contributor at Tenant Root MG
+az role assignment create \
+  --assignee "$SP_OBJECT_ID" \
+  --role "Management Group Contributor" \
   --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
 ```
 
@@ -306,6 +310,21 @@ az role assignment list \
 
 ## Troubleshooting
 
+### Common Error: "does not have authorization to perform action 'Microsoft.Resources/deployments/validate/action'"
+
+```
+The client does not have authorization to perform action 'Microsoft.Resources/deployments/validate/action'
+over scope '/providers/Microsoft.Resources/deployments/mg-hierarchy'
+```
+
+**Cause**: Missing permissions at the **tenant root scope** (`/`) for tenant-scoped deployments.
+
+**Solution**: Assign `Contributor` role at the tenant root:
+
+```bash
+az role assignment create --assignee "$SP_OBJECT_ID" --role "Contributor" --scope "/"
+```
+
 ### Common Error: "Authorization failed for template resource"
 
 ```
@@ -313,9 +332,11 @@ Authorization failed for template resource 'mg-xxx' of type 'Microsoft.Resources
 The client does not have permission to perform action 'Microsoft.Resources/deployments/write'
 ```
 
-**Cause**: Missing `Contributor` role at management group scope.
+**Cause**: Missing `Contributor` role at management group scope, OR using management group scoped deployment for MGs that don't exist yet.
 
-**Solution**: Assign `Contributor` role at the Tenant Root Management Group (in addition to `Management Group Contributor`).
+**Solution**: 
+1. Use tenant-scoped deployment (`az deployment tenant`) instead of management group scoped
+2. Assign `Contributor` role at the Tenant Root scope (`/`)
 
 ### Common Error: "The client does not have authorization to perform action 'Microsoft.Subscription/aliases/write'"
 
