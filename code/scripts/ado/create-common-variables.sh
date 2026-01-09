@@ -43,6 +43,15 @@ BILLING_ACCOUNT_ID="${BILLING_ACCOUNT_ID:-}"
 INVOICE_SECTION_ID="${INVOICE_SECTION_ID:-}"
 ENROLLMENT_ACCOUNT_ID="${ENROLLMENT_ACCOUNT_ID:-}"
 
+# Environments configuration (from config.sh)
+# Convert ENVIRONMENTS array to comma-separated string for variable group storage
+# This enables runtime validation in pipelines against the authoritative list
+if [[ -z "${ENVIRONMENTS[*]:-}" ]]; then
+    # Default environments if not set in config.sh
+    ENVIRONMENTS=("nonprod" "dev" "test" "uat" "staging" "prod" "live")
+fi
+ENVIRONMENTS_CSV=$(IFS=','; echo "${ENVIRONMENTS[*]}")
+
 # Validate required variables
 if [[ -z "${AAD_TENANT_ID}" ]]; then
     log_error "AAD_TENANT_ID is required but not set in config.sh"
@@ -91,6 +100,7 @@ create_common_variables_group() {
     set_variable "$group_id" "billingAccountId" "${BILLING_ACCOUNT_ID}"
     set_variable "$group_id" "invoiceSectionId" "${INVOICE_SECTION_ID}"
     set_variable "$group_id" "enrollmentAccountId" "${ENROLLMENT_ACCOUNT_ID}"
+    set_variable "$group_id" "environments" "${ENVIRONMENTS_CSV}"
     
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
@@ -111,6 +121,7 @@ create_common_variables_group() {
     echo "  - billingAccountId: ${BILLING_ACCOUNT_ID}"
     echo "  - invoiceSectionId: ${INVOICE_SECTION_ID}"
     echo "  - enrollmentAccountId: ${ENROLLMENT_ACCOUNT_ID}"
+    echo "  - environments: ${ENVIRONMENTS_CSV}"
 }
 
 # Dry run - show what would be done
@@ -133,6 +144,7 @@ dry_run() {
     echo "  - billingAccountId: ${BILLING_ACCOUNT_ID}"
     echo "  - invoiceSectionId: ${INVOICE_SECTION_ID}"
     echo "  - enrollmentAccountId: ${ENROLLMENT_ACCOUNT_ID}"
+    echo "  - environments: ${ENVIRONMENTS_CSV}"
     echo ""
     
     log_info "Configuration:"

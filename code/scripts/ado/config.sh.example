@@ -151,3 +151,19 @@ export MONITORING_SUBSCRIPTION_ID=""
 
 # Log Analytics workspace data retention in days (30-730)
 export DATA_RETENTION_DAYS="60"
+
+# =============================================================================
+# Environment Configuration (for ADO environments and pipeline validation)
+# =============================================================================
+# List of deployment environments to create in Azure DevOps
+# These are used by:
+#   - create-environments.sh: Creates ADO environments for deployment jobs
+#   - create-common-variables.sh: Stores list in common-variables for pipeline validation
+#   - Pipeline Validate stages: Validates environment parameter against this list
+#
+# Modify this list to match your organization's deployment environments
+# Common patterns:
+#   - Simple: ("dev" "prod")
+#   - Standard: ("dev" "test" "staging" "prod")
+#   - Enterprise: ("nonprod" "dev" "test" "uat" "staging" "prod" "live")
+ENVIRONMENTS=("nonprod" "dev" "test" "uat" "staging" "prod" "live")

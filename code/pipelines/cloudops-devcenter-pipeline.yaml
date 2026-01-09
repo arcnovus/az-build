@@ -111,6 +111,26 @@ stages:
         steps:
           - checkout: self
 
+          - script: |
+              # Validate environment parameter against allowed environments
+              ALLOWED_ENVS="$(environments)"
+              ENV_PARAM="${{ parameters.environment }}"
+              
+              if [ -z "$ENV_PARAM" ]; then
+                echo "##[error]Environment parameter is required but was not provided."
+                echo "Allowed environments: ${ALLOWED_ENVS}"
+                exit 1
+              fi
+              
+              if [[ ",${ALLOWED_ENVS}," =~ ",${ENV_PARAM}," ]]; then
+                echo "✓ Valid environment: ${ENV_PARAM}"
+              else
+                echo "##[error]Invalid environment: ${ENV_PARAM}"
+                echo "Allowed environments: ${ALLOWED_ENVS}"
+                exit 1
+              fi
+            displayName: "Validate Environment Parameter"
+
           - task: AzureCLI@2
             displayName: "Validate DevCenter Deployment Stack"
             inputs:
@@ -243,7 +263,7 @@ stages:
     jobs:
       - deployment: DeployDevCenterStack
         displayName: "Deploy DevCenter Stack"
-        environment: "cloudops-devcenter"
+        environment: "${{ parameters.environment }}"
         strategy:
           runOnce:
             deploy:

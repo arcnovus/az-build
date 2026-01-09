@@ -1,6 +1,6 @@
 # Azure DevOps Scripts
 
-This directory contains scripts for managing Azure DevOps resources, specifically variable groups required by the infrastructure deployment pipelines.
+This directory contains scripts for managing Azure DevOps resources, including variable groups and deployment environments required by the infrastructure deployment pipelines.
 
 ## Quick Start
 
@@ -11,29 +11,31 @@ cp config.sh.example config.sh
 # 2. Edit config.sh with your values
 # Required values:
 #   - AAD_TENANT_ID: Your Azure AD tenant ID
-#   - ADO_PAT_TOKEN: Personal Access Token with Variable Groups permissions
+#   - ADO_PAT_TOKEN: Personal Access Token with Variable Groups and Environments permissions
 #   - ADO_ORGANIZATION_URL: e.g., https://dev.azure.com/myorg
 #   - ADO_PROJECT_NAME: Your Azure DevOps project name
 
 # 3. Verify prerequisites
-./check-prerequisites.sh
+bash check-prerequisites.sh
 
-# 4. Create variable groups
-./create-variable-groups.sh
+# 4. Run complete ADO setup (creates variable groups and environments)
+bash setup-ado.sh
 ```
 
 ## Scripts
 
 | Script | Description |
 |--------|-------------|
+| `setup-ado.sh` | **Master script** - Complete ADO setup (variable groups + environments) |
 | `check-prerequisites.sh` | Verifies all prerequisites are met (CLI tools, extensions, config) |
 | `create-variable-groups.sh` | Orchestrates creation of all variable groups |
+| `create-environments.sh` | Creates Azure DevOps deployment environments |
 | `create-common-variables.sh` | Creates/updates the `common-variables` variable group |
 | `create-mg-hierarchy-variables.sh` | Creates/updates the `mg-hierarchy-variables` variable group |
 | `create-monitoring-variables.sh` | Creates/updates the `monitoring-variables` variable group |
 | `delete-variable-groups.sh` | Deletes variable groups (use with caution!) |
 | `show-variable-groups.sh` | Displays details of existing variable groups |
-| `lib.sh` | Shared library functions |
+| `lib.sh` | Shared library functions (variable groups + environments) |
 | `config.sh` | Your configuration (gitignored - create from example) |
 | `config.sh.example` | Configuration template with documentation |
 
@@ -53,6 +55,7 @@ This variable group is used by **all** infrastructure deployment pipelines and c
 | `managedBy` | Infrastructure management tool (e.g., "Bicep") | `MANAGED_BY` in config.sh |
 | `denySettingsMode` | Default deployment stack deny settings | `DEFAULT_DENY_SETTINGS_MODE` in config.sh |
 | `actionOnUnmanage` | Default action on unmanaged resources | `DEFAULT_ACTION_ON_UNMANAGE` in config.sh |
+| `environments` | Comma-separated list of valid environments | `ENVIRONMENTS` array in config.sh |
 
 ### `mg-hierarchy-variables`
 
@@ -73,6 +76,31 @@ This variable group is used by the monitoring infrastructure pipeline and contai
 | `dataRetention` | Log Analytics data retention in days (30-730) | `DATA_RETENTION_DAYS` in config.sh |
 
 > **Note:** The `monitoringSubscriptionId` can be left empty during initial setup. Set it after the monitoring subscription is created via the sub-vending pipeline.
+
+## Deployment Environments
+
+The `create-environments.sh` script creates Azure DevOps environments used by pipeline deployment jobs. Environments are configured via the `ENVIRONMENTS` array in `config.sh`:
+
+```bash
+# Default environments (in config.sh)
+ENVIRONMENTS=("nonprod" "dev" "test" "uat" "staging" "prod" "live")
+```
+
+### Environment Validation in Pipelines
+
+Pipelines validate the `environment` parameter at runtime against the `environments` variable stored in the `common-variables` group. This ensures:
+
+- The environment parameter matches the authoritative list
+- Early failure with clear error messages if invalid
+- Consistency between YAML dropdown values and allowed environments
+
+### Customizing Environments
+
+To customize the environments list:
+
+1. Edit `config.sh` and modify the `ENVIRONMENTS` array
+2. Run `bash setup-ado.sh` to update the variable group and create environments
+3. Update the `values:` list in pipeline YAML files (for the UI dropdown)
 
 ## Prerequisites
 
@@ -114,6 +142,7 @@ Create a Personal Access Token at:
 
 Required permissions:
 - **Variable Groups**: Read & Manage
+- **Environment**: Read & Manage
 - **Build**: Read (optional, for pipeline integration)
 
 ## Configuration
@@ -142,29 +171,48 @@ Required permissions:
 | `ORG_DISPLAY_NAME` | Organization display name | `Organization Name` |
 | `MONITORING_SUBSCRIPTION_ID` | Monitoring subscription ID | (empty) |
 | `DATA_RETENTION_DAYS` | Log Analytics data retention | `60` |
+| `ENVIRONMENTS` | Array of deployment environments | `("nonprod" "dev" "test" "uat" "staging" "prod" "live")` |
 
 ## Usage Examples
 
+### Complete ADO Setup (Recommended)
+```bash
+# Run full setup (variable groups + environments)
+bash setup-ado.sh
+
+# Dry run to see what would be done
+bash setup-ado.sh --dry-run
+```
+
 ### Check Prerequisites
 ```bash
-./check-prerequisites.sh
+bash check-prerequisites.sh
 ```
 
-### Create Variable Groups (with confirmation)
+### Create Variable Groups Only
 ```bash
-./create-variable-groups.sh
+bash create-variable-groups.sh
+
+# Dry run
+bash create-variable-groups.sh --dry-run
 ```
 
-### Dry Run (see what would be done)
+### Create Environments Only
 ```bash
-./create-variable-groups.sh --dry-run
+bash create-environments.sh
+
+# Dry run
+bash create-environments.sh --dry-run
+
+# List existing environments
+bash create-environments.sh --list
 ```
 
 ### List Existing Variable Groups
 ```bash
-./create-variable-groups.sh --list
+bash create-variable-groups.sh --list
 # or
-./show-variable-groups.sh --list
+bash show-variable-groups.sh --list
 ```
 
 ### Show Variable Group Details
@@ -177,13 +225,13 @@ Required permissions:
 ### Delete Variable Groups
 ```bash
 # Delete specific group
-./delete-variable-groups.sh common-variables
+bash delete-variable-groups.sh common-variables
 
 # Delete all managed groups
-./delete-variable-groups.sh --all
+bash delete-variable-groups.sh --all
 
 # Force delete without confirmation
-./delete-variable-groups.sh --all --force
+bash delete-variable-groups.sh --all --force
 ```
 
 ## Pipelines Using These Variable Groups
@@ -214,12 +262,19 @@ az extension add --name azure-devops
 ### "Variable group not found"
 The group may not exist yet. Run:
 ```bash
-./create-variable-groups.sh
+bash create-variable-groups.sh
+```
+
+### "Environment could not be found"
+The environment may not exist yet. Run:
+```bash
+bash create-environments.sh
 ```
 
 ### "Access denied"
 Your PAT needs these permissions:
 - Variable Groups: Read & Manage
+- Environment: Read & Manage
 
 ## Security Notes
 

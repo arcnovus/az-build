@@ -336,11 +336,80 @@ get_or_create_variable_group() {
 }
 
 # =============================================================================
+# Environment Functions
+# =============================================================================
+# Helper functions for managing Azure DevOps environments.
+# These are used by the create-environments.sh script.
+
+# Check if an environment exists
+environment_exists() {
+    local env_name="$1"
+    
+    az pipelines environment list \
+        --org "${ADO_ORGANIZATION_URL}" \
+        --project "${ADO_PROJECT_NAME}" \
+        --query "[?name=='${env_name}'].id" \
+        -o tsv 2>/dev/null | grep -q .
+}
+
+# Get environment ID by name
+get_environment_id() {
+    local env_name="$1"
+    
+    az pipelines environment list \
+        --org "${ADO_ORGANIZATION_URL}" \
+        --project "${ADO_PROJECT_NAME}" \
+        --query "[?name=='${env_name}'].id | [0]" \
+        -o tsv 2>/dev/null
+}
+
+# Create a new environment and return its ID
+create_environment() {
+    local env_name="$1"
+    
+    local env_id
+    env_id=$(az pipelines environment create \
+        --org "${ADO_ORGANIZATION_URL}" \
+        --project "${ADO_PROJECT_NAME}" \
+        --name "${env_name}" \
+        --query 'id' \
+        -o tsv 2>/dev/null)
+    
+    if [[ -z "$env_id" ]]; then
+        log_error "Failed to create environment: ${env_name}"
+        return 1
+    fi
+    
+    echo "$env_id"
+}
+
+# Get or create an environment (returns the environment ID)
+get_or_create_environment() {
+    local env_name="$1"
+    
+    local env_id=""
+    
+    if environment_exists "$env_name"; then
+        log_info "Environment '${env_name}' already exists, skipping..."
+        env_id=$(get_environment_id "$env_name")
+    else
+        log_info "Creating new environment '${env_name}'..."
+        env_id=$(create_environment "$env_name")
+        if [[ -n "$env_id" ]]; then
+            log_success "Created environment '${env_name}' with ID: ${env_id}"
+        fi
+    fi
+    
+    echo "$env_id"
+}
+
+# =============================================================================
 # Export for child scripts
 # =============================================================================
 export -f log_info log_success log_warn log_error log_step validate_config
 export -f save_bootstrap_context load_bootstrap_context ensure_subscription_context check_bootstrap_subscription
 export -f lookup_management_subscription_id lookup_hub_subscription_id
 export -f variable_group_exists get_variable_group_id create_variable_group update_variable delete_variable get_or_create_variable_group
+export -f environment_exists get_environment_id create_environment get_or_create_environment
 export BOOTSTRAP_CONTEXT_FILE
 
