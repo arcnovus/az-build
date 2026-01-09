@@ -1,3 +1,15 @@
+// =============================================================================
+// Management Group Hierarchy Parameters
+// =============================================================================
+// Deploy with: az deployment tenant create --location <region> \
+//              --template-file mg-hierarchy.bicep --parameters mg-hierarchy.bicepparam
+//
+// RBAC Requirements (assign before running):
+//   az role assignment create --assignee "<sp-object-id>" --role "Contributor" --scope "/"
+//   az role assignment create --assignee "<sp-object-id>" --role "Management Group Contributor" \
+//     --scope "/providers/Microsoft.Management/managementGroups/<tenant-id>"
+// =============================================================================
+
 using 'mg-hierarchy.bicep'
 
 param tenantRootManagementGroupId = 'your-tenant-id'

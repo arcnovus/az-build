@@ -10,13 +10,19 @@
 // non-existent parent MGs would fail validation.
 //
 // RBAC REQUIREMENTS:
-// The deploying identity (user or service principal) requires these roles
-// at the Tenant Root Management Group:
+// The deploying identity (user or service principal) requires:
 //
-//   - Management Group Contributor - Create/update/delete management groups
-//   - Contributor - Microsoft.Resources/deployments/write permission
+//   1. Contributor at Tenant Root (/)
+//      - Scope: "/"
+//      - For: Microsoft.Resources/deployments/validate/action (tenant deployments)
 //
-// See: docs/Management-Group-Hierarchy/Creating-Management-Group-Hierarchy.md
+//   2. Management Group Contributor at Tenant Root MG
+//      - Scope: "/providers/Microsoft.Management/managementGroups/<tenant-id>"
+//      - For: Create/update/delete management groups
+//
+// Note: Tenant Root (/) is different from Tenant Root Management Group!
+//
+// See: docs/RBAC-Requirements.md for full documentation
 // =============================================================================
 
 targetScope = 'tenant'
