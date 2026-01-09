@@ -46,10 +46,6 @@ variables:
     value: "$(bicepPath)/sub-vending.bicepparam"
 
 parameters:
-  - name: subscriptionDisplayName
-    displayName: "Subscription Display Name"
-    type: string
-    default: ""
   - name: workloadAlias
     displayName: "Workload Alias"
     type: string
@@ -217,7 +213,6 @@ stages:
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
                   --parameters "$(parametersFile)" \
-                  --parameters subscriptionDisplayName="${{ parameters.subscriptionDisplayName }}" \
                   --parameters managementGroupId="${{ parameters.managementGroupId }}" \
                   --parameters billingScope="$BILLING_SCOPE" \
                   --parameters workload="${{ parameters.workload }}" \

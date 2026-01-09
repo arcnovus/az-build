@@ -1,7 +1,5 @@
 using 'sub-vending.bicep'
 
-param subscriptionDisplayName = 'example-subscription'
-
 param managementGroupId = 'your-management-group-id'
 
 param billingScope = ''
