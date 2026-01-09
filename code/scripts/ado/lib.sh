@@ -348,42 +348,169 @@ get_or_create_variable_group() {
 environment_exists() {
     local env_name="$1"
     
-    az pipelines environment list \
+    # Use REST API to list environments
+    # API format: GET https://dev.azure.com/{organization}/{project}/_apis/distributedtask/environments
+    local error_output
+    local json_output
+    error_output=$(az devops invoke \
+        --area distributedtask \
+        --resource environments \
+        --route-parameters "project=${ADO_PROJECT_NAME}" \
         --org "${ADO_ORGANIZATION_URL}" \
-        --project "${ADO_PROJECT_NAME}" \
-        --query "[?name=='${env_name}'].id" \
-        -o tsv 2>/dev/null | grep -q .
+        --api-version "7.0" \
+        --http-method GET \
+        -o json 2>&1)
+    local exit_code=$?
+    
+    # If command failed, check if it's a permission issue
+    if [[ $exit_code -ne 0 ]]; then
+        if echo "$error_output" | grep -qi "authentication\|unauthorized\|forbidden\|access denied"; then
+            log_warn "Permission error checking for environment '${env_name}'"
+            log_warn "This may indicate missing PAT permissions (Environment: Read & Manage)"
+        fi
+        return 1
+    fi
+    
+    # Check if environment name exists in the JSON response
+    if echo "$error_output" | jq -e --arg name "$env_name" '.value[] | select(.name == $name)' > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 # Get environment ID by name
 get_environment_id() {
     local env_name="$1"
     
-    az pipelines environment list \
+    local json_output
+    json_output=$(az devops invoke \
+        --area distributedtask \
+        --resource environments \
+        --route-parameters "project=${ADO_PROJECT_NAME}" \
         --org "${ADO_ORGANIZATION_URL}" \
-        --project "${ADO_PROJECT_NAME}" \
-        --query "[?name=='${env_name}'].id | [0]" \
-        -o tsv 2>/dev/null
+        --api-version "7.0" \
+        --http-method GET \
+        -o json 2>/dev/null)
+    
+    if [[ -n "$json_output" ]]; then
+        echo "$json_output" | jq -r --arg name "$env_name" '.value[] | select(.name == $name) | .id' 2>/dev/null
+    fi
 }
 
 # Create a new environment and return its ID
 create_environment() {
     local env_name="$1"
     
-    local env_id
-    env_id=$(az pipelines environment create \
-        --org "${ADO_ORGANIZATION_URL}" \
-        --project "${ADO_PROJECT_NAME}" \
-        --name "${env_name}" \
-        --query 'id' \
-        -o tsv 2>/dev/null)
+    # Create JSON payload for the REST API
+    local payload
+    payload=$(jq -n --arg name "$env_name" '{name: $name, description: "Created via az-build scripts"}')
     
-    if [[ -z "$env_id" ]]; then
+    # Create a temporary file for the payload
+    local payload_file
+    payload_file=$(mktemp)
+    echo "$payload" > "$payload_file"
+    
+    # Capture both stdout and stderr
+    local output
+    local error_output
+    local exit_code
+    
+    # Create a temporary file for stderr
+    local error_file
+    error_file=$(mktemp)
+    
+    # Use REST API to create environment
+    # API format: POST https://dev.azure.com/{organization}/{project}/_apis/distributedtask/environments
+    output=$(az devops invoke \
+        --area distributedtask \
+        --resource environments \
+        --route-parameters "project=${ADO_PROJECT_NAME}" \
+        --org "${ADO_ORGANIZATION_URL}" \
+        --api-version "7.0" \
+        --http-method POST \
+        --in-file "$payload_file" \
+        -o json 2>"$error_file")
+    exit_code=$?
+    
+    # Clean up payload file
+    rm -f "$payload_file"
+    
+    # Read error output if command failed
+    if [[ $exit_code -ne 0 ]] || [[ -z "$output" ]]; then
+        error_output=$(cat "$error_file" 2>/dev/null || echo "")
+        rm -f "$error_file"
+        
         log_error "Failed to create environment: ${env_name}"
+        
+        # Provide helpful error messages based on common issues
+        if echo "$error_output" | grep -qi "authentication\|unauthorized\|forbidden\|access denied\|401\|403"; then
+            echo ""
+            log_error "Authentication or permission error detected."
+            echo ""
+            echo "  This usually means your PAT token is missing required permissions."
+            echo ""
+            echo "  Required PAT permissions:"
+            echo "    - Environment: Read & Manage (under Pipelines)"
+            echo "    - Project and Team: Read (under Project)"
+            echo ""
+            echo "  To fix:"
+            echo "    1. Go to: ${ADO_ORGANIZATION_URL}/_usersSettings/tokens"
+            echo "    2. Create/edit your PAT"
+            echo "    3. Expand 'Pipelines' section"
+            echo "    4. Check 'Environment → Read & Manage'"
+            echo "    5. Update ADO_PAT_TOKEN in config.sh"
+            echo ""
+        elif echo "$error_output" | grep -qi "not found\|does not exist\|404"; then
+            echo ""
+            log_error "Project or organization not found."
+            echo ""
+            echo "  Verify in config.sh:"
+            echo "    - ADO_ORGANIZATION_URL: ${ADO_ORGANIZATION_URL}"
+            echo "    - ADO_PROJECT_NAME: ${ADO_PROJECT_NAME}"
+            echo ""
+        elif echo "$error_output" | grep -qi "already exists\|duplicate\|409"; then
+            # This shouldn't happen if we check first, but handle it gracefully
+            log_warn "Environment may already exist (checking...)"
+            # Try to get the ID of the existing environment
+            local existing_id
+            existing_id=$(get_environment_id "$env_name")
+            if [[ -n "$existing_id" ]]; then
+                echo "$existing_id"
+                return 0
+            fi
+        fi
+        
+        # Always show the raw error if available
+        if [[ -n "$error_output" ]]; then
+            echo ""
+            log_info "Azure CLI error details:"
+            # Try to extract error message from JSON if it's JSON
+            if echo "$error_output" | jq -e '.message' > /dev/null 2>&1; then
+                echo "$error_output" | jq -r '.message' | sed 's/^/  /'
+            else
+                echo "$error_output" | sed 's/^/  /'
+            fi
+            echo ""
+        fi
+        
+        return 1
+    fi
+    
+    rm -f "$error_file"
+    
+    # Extract environment ID from JSON response
+    local env_id
+    env_id=$(echo "$output" | jq -r '.id' 2>/dev/null)
+    
+    if [[ -z "$env_id" ]] || [[ "$env_id" == "null" ]]; then
+        log_error "Created environment but could not retrieve ID: ${env_name}"
+        log_info "Response was: ${output}"
         return 1
     fi
     
     echo "$env_id"
+    return 0
 }
 
 # Get or create an environment (returns the environment ID)

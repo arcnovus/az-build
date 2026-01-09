@@ -45,11 +45,72 @@ fi
 # Functions
 # =============================================================================
 
+# Test Azure DevOps connection and permissions
+test_ado_permissions() {
+    log_step "Testing Azure DevOps connection and permissions..."
+    
+    # Test basic connection by listing environments using REST API
+    local error_output
+    error_output=$(az devops invoke \
+        --area distributedtask \
+        --resource environments \
+        --route-parameters "project=${ADO_PROJECT_NAME}" \
+        --org "${ADO_ORGANIZATION_URL}" \
+        --api-version "7.0" \
+        --http-method GET \
+        -o json 2>&1)
+    local exit_code=$?
+    
+    if [[ $exit_code -ne 0 ]]; then
+        log_error "Failed to connect to Azure DevOps or list environments"
+        echo ""
+        
+        if echo "$error_output" | grep -qi "authentication\|unauthorized\|forbidden\|access denied\|401\|403"; then
+            log_error "Permission error detected!"
+            echo ""
+            echo "  Your PAT token is missing required permissions."
+            echo ""
+            echo "  Required permissions:"
+            echo "    - Environment: Read & Manage (under Pipelines)"
+            echo "    - Project and Team: Read (under Project)"
+            echo ""
+            echo "  To fix:"
+            echo "    1. Go to: ${ADO_ORGANIZATION_URL}/_usersSettings/tokens"
+            echo "    2. Create/edit your PAT"
+            echo "    3. Expand 'Pipelines' section"
+            echo "    4. Check 'Environment → Read & Manage'"
+            echo "    5. Update ADO_PAT_TOKEN in config.sh"
+            echo ""
+        else
+            log_info "Error details:"
+            # Try to extract error message from JSON if it's JSON
+            if echo "$error_output" | jq -e '.message' > /dev/null 2>&1; then
+                echo "$error_output" | jq -r '.message' | sed 's/^/  /'
+            else
+                echo "$error_output" | sed 's/^/  /'
+            fi
+            echo ""
+        fi
+        
+        return 1
+    fi
+    
+    log_success "Connection and permissions verified"
+    return 0
+}
+
 # Create all environments from the ENVIRONMENTS array
 create_all_environments() {
     echo ""
     log_info "Creating Azure DevOps environments..."
     log_info "Environments to create: ${ENVIRONMENTS[*]}"
+    echo ""
+    
+    # Test permissions first
+    if ! test_ado_permissions; then
+        log_error "Permission check failed. Cannot proceed with environment creation."
+        return 1
+    fi
     echo ""
     
     local created=0
@@ -68,6 +129,7 @@ create_all_environments() {
             else
                 log_error "Failed to create environment '${env_name}'"
                 ((failed++))
+                echo ""
             fi
         fi
     done
@@ -78,6 +140,17 @@ create_all_environments() {
     echo "  - Already existed: ${skipped}"
     if [[ $failed -gt 0 ]]; then
         log_error "  - Failed: ${failed}"
+        echo ""
+        log_error "Some environments failed to create."
+        echo ""
+        echo "  Common causes:"
+        echo "    1. Missing PAT permissions: Environment → Read & Manage"
+        echo "    2. Invalid organization URL or project name"
+        echo "    3. PAT token expired or revoked"
+        echo ""
+        echo "  Check the error messages above for specific details."
+        echo "  Verify your PAT at: ${ADO_ORGANIZATION_URL}/_usersSettings/tokens"
+        echo ""
         return 1
     fi
     
@@ -110,11 +183,22 @@ list_environments() {
     log_info "Listing environments in project '${ADO_PROJECT_NAME}'..."
     echo ""
     
-    az pipelines environment list \
+    local json_output
+    json_output=$(az devops invoke \
+        --area distributedtask \
+        --resource environments \
+        --route-parameters "project=${ADO_PROJECT_NAME}" \
         --org "${ADO_ORGANIZATION_URL}" \
-        --project "${ADO_PROJECT_NAME}" \
-        --query "[].{Name:name, ID:id}" \
-        -o table
+        --api-version "7.0" \
+        --http-method GET \
+        -o json 2>&1)
+    
+    if [[ $? -eq 0 ]] && echo "$json_output" | jq -e '.value' > /dev/null 2>&1; then
+        echo "$json_output" | jq -r '.value[] | "\(.name)\t\(.id)"' | column -t -s $'\t' -N "Name,ID"
+    else
+        log_error "Failed to list environments"
+        echo "$json_output" | jq -r '.message' 2>/dev/null || echo "$json_output"
+    fi
 }
 
 # Display usage information
