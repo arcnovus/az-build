@@ -58,4 +58,4 @@ resource subscriptionAlias 'Microsoft.Subscription/aliases@2024-08-01-preview' =
 
 output subscriptionAliasName string = subscriptionAlias.name
 output subscriptionId string = subscriptionAlias.properties.subscriptionId
-output managementGroupResourceId string = subscriptionAlias.properties.managementGroupId
+output managementGroupResourceId string = targetMgResourceId
