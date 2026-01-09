@@ -163,44 +163,21 @@ stages:
                   fi
                 fi
 
-                PARAMS=""
-                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                fi
-                if [ -n "${{ parameters.managementGroupId }}" ]; then
-                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
-                fi
-                if [ -n "$BILLING_SCOPE" ]; then
-                  PARAMS="$PARAMS --parameters billingScope='$BILLING_SCOPE'"
-                fi
-                if [ -n "${{ parameters.workload }}" ]; then
-                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                fi
-                if [ -n "${{ parameters.workloadAlias }}" ]; then
-                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
-                fi
-                if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
-                fi
-                if [ -n "${{ parameters.locationCode }}" ]; then
-                  PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
-                fi
-                if [ -n "${{ parameters.instanceNumber }}" ]; then
-                  PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
-                fi
-                if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
-                fi
-                if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
-                fi
-
                 az deployment mg validate \
-                  --management-group-id $(azureTenantId) \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  $PARAMS
+                  --management-group-id "$(azureTenantId)" \
+                  --location "$(deploymentLocation)" \
+                  --template-file "$(templateFile)" \
+                  --parameters "$(parametersFile)" \
+                  --parameters subscriptionDisplayName="${{ parameters.subscriptionDisplayName }}" \
+                  --parameters managementGroupId="${{ parameters.managementGroupId }}" \
+                  --parameters billingScope="$BILLING_SCOPE" \
+                  --parameters workload="${{ parameters.workload }}" \
+                  --parameters workloadAlias="${{ parameters.workloadAlias }}" \
+                  --parameters environment="${{ parameters.environment }}" \
+                  --parameters locationCode="${{ parameters.locationCode }}" \
+                  --parameters instanceNumber="${{ parameters.instanceNumber }}" \
+                  --parameters owner="${{ parameters.owner }}" \
+                  --parameters managedBy="${{ parameters.managedBy }}"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -237,44 +214,21 @@ stages:
                   fi
                 fi
 
-                PARAMS=""
-                if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                  PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                fi
-                if [ -n "${{ parameters.workloadAlias }}" ]; then
-                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
-                fi
-                if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
-                fi
-                if [ -n "${{ parameters.locationCode }}" ]; then
-                  PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
-                fi
-                if [ -n "${{ parameters.instanceNumber }}" ]; then
-                  PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
-                fi
-                if [ -n "${{ parameters.managementGroupId }}" ]; then
-                  PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
-                fi
-                if [ -n "$BILLING_SCOPE" ]; then
-                  PARAMS="$PARAMS --parameters billingScope='$BILLING_SCOPE'"
-                fi
-                if [ -n "${{ parameters.workload }}" ]; then
-                  PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                fi
-                if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
-                fi
-                if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
-                fi
-
                 az deployment mg what-if \
-                  --management-group-id $(azureTenantId) \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  $PARAMS
+                  --management-group-id "$(azureTenantId)" \
+                  --location "$(deploymentLocation)" \
+                  --template-file "$(templateFile)" \
+                  --parameters "$(parametersFile)" \
+                  --parameters subscriptionDisplayName="${{ parameters.subscriptionDisplayName }}" \
+                  --parameters managementGroupId="${{ parameters.managementGroupId }}" \
+                  --parameters billingScope="$BILLING_SCOPE" \
+                  --parameters workload="${{ parameters.workload }}" \
+                  --parameters workloadAlias="${{ parameters.workloadAlias }}" \
+                  --parameters environment="${{ parameters.environment }}" \
+                  --parameters locationCode="${{ parameters.locationCode }}" \
+                  --parameters instanceNumber="${{ parameters.instanceNumber }}" \
+                  --parameters owner="${{ parameters.owner }}" \
+                  --parameters managedBy="${{ parameters.managedBy }}"
 
   - stage: Deploy
     displayName: "Deploy Subscription Vending"
@@ -317,42 +271,19 @@ stages:
                         fi
                       fi
 
-                      PARAMS=""
-                      if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
-                        PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
-                      fi
-                      if [ -n "${{ parameters.workloadAlias }}" ]; then
-                        PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
-                      fi
-                      if [ -n "${{ parameters.environment }}" ]; then
-                        PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
-                      fi
-                      if [ -n "${{ parameters.locationCode }}" ]; then
-                        PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
-                      fi
-                      if [ -n "${{ parameters.instanceNumber }}" ]; then
-                        PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
-                      fi
-                      if [ -n "${{ parameters.managementGroupId }}" ]; then
-                        PARAMS="$PARAMS --parameters managementGroupId='${{ parameters.managementGroupId }}'"
-                      fi
-                      if [ -n "$BILLING_SCOPE" ]; then
-                        PARAMS="$PARAMS --parameters billingScope='$BILLING_SCOPE'"
-                      fi
-                      if [ -n "${{ parameters.workload }}" ]; then
-                        PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
-                      fi
-                      if [ -n "${{ parameters.owner }}" ]; then
-                        PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
-                      fi
-                      if [ -n "${{ parameters.managedBy }}" ]; then
-                        PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
-                      fi
-
                       az deployment mg create \
-                        --name 'sub-vending-$(Build.BuildNumber)' \
-                        --management-group-id $(azureTenantId) \
-                        --location $(deploymentLocation) \
-                        --template-file $(templateFile) \
-                        --parameters $(parametersFile) \
-                        $PARAMS
+                        --name "sub-vending-$(Build.BuildNumber)" \
+                        --management-group-id "$(azureTenantId)" \
+                        --location "$(deploymentLocation)" \
+                        --template-file "$(templateFile)" \
+                        --parameters "$(parametersFile)" \
+                        --parameters subscriptionDisplayName="${{ parameters.subscriptionDisplayName }}" \
+                        --parameters managementGroupId="${{ parameters.managementGroupId }}" \
+                        --parameters billingScope="$BILLING_SCOPE" \
+                        --parameters workload="${{ parameters.workload }}" \
+                        --parameters workloadAlias="${{ parameters.workloadAlias }}" \
+                        --parameters environment="${{ parameters.environment }}" \
+                        --parameters locationCode="${{ parameters.locationCode }}" \
+                        --parameters instanceNumber="${{ parameters.instanceNumber }}" \
+                        --parameters owner="${{ parameters.owner }}" \
+                        --parameters managedBy="${{ parameters.managedBy }}"
