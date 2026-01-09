@@ -154,9 +154,9 @@ stages:
                 # Construct billing scope from variable group values
                 BILLING_SCOPE=""
                 if [ -n "$(billingAccountId)" ]; then
-                  if [ -n "$(invoiceSectionId)" ]; then
-                    # MCA billing scope format
-                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/invoiceSections/$(invoiceSectionId)"
+                  if [ -n "$(invoiceSectionId)" ] && [ -n "$(billingProfileId)" ]; then
+                    # MCA billing scope format (requires billing profile)
+                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/billingProfiles/$(billingProfileId)/invoiceSections/$(invoiceSectionId)"
                   elif [ -n "$(enrollmentAccountId)" ]; then
                     # EA billing scope format
                     BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/enrollmentAccounts/$(enrollmentAccountId)"
@@ -205,9 +205,9 @@ stages:
                 # Construct billing scope from variable group values
                 BILLING_SCOPE=""
                 if [ -n "$(billingAccountId)" ]; then
-                  if [ -n "$(invoiceSectionId)" ]; then
-                    # MCA billing scope format
-                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/invoiceSections/$(invoiceSectionId)"
+                  if [ -n "$(invoiceSectionId)" ] && [ -n "$(billingProfileId)" ]; then
+                    # MCA billing scope format (requires billing profile)
+                    BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/billingProfiles/$(billingProfileId)/invoiceSections/$(invoiceSectionId)"
                   elif [ -n "$(enrollmentAccountId)" ]; then
                     # EA billing scope format
                     BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/enrollmentAccounts/$(enrollmentAccountId)"
@@ -262,9 +262,9 @@ stages:
                       # Construct billing scope from variable group values
                       BILLING_SCOPE=""
                       if [ -n "$(billingAccountId)" ]; then
-                        if [ -n "$(invoiceSectionId)" ]; then
-                          # MCA billing scope format
-                          BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/invoiceSections/$(invoiceSectionId)"
+                        if [ -n "$(invoiceSectionId)" ] && [ -n "$(billingProfileId)" ]; then
+                          # MCA billing scope format (requires billing profile)
+                          BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/billingProfiles/$(billingProfileId)/invoiceSections/$(invoiceSectionId)"
                         elif [ -n "$(enrollmentAccountId)" ]; then
                           # EA billing scope format
                           BILLING_SCOPE="/providers/Microsoft.Billing/billingAccounts/$(billingAccountId)/enrollmentAccounts/$(enrollmentAccountId)"
