@@ -163,7 +163,6 @@ stages:
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
                   --parameters "$(parametersFile)" \
-                  --parameters subscriptionDisplayName="${{ parameters.subscriptionDisplayName }}" \
                   --parameters managementGroupId="${{ parameters.managementGroupId }}" \
                   --parameters billingScope="$BILLING_SCOPE" \
                   --parameters workload="${{ parameters.workload }}" \
@@ -264,12 +263,12 @@ stages:
                         fi
                       fi
 
-                      az deployment tenant create \
+                      az deployment mg create \
                         --name "sub-vending-$(Build.BuildNumber)" \
+                        --management-group-id "$(azureTenantId)" \
                         --location "$(deploymentLocation)" \
                         --template-file "$(templateFile)" \
                         --parameters "$(parametersFile)" \
-                        --parameters subscriptionDisplayName="${{ parameters.subscriptionDisplayName }}" \
                         --parameters managementGroupId="${{ parameters.managementGroupId }}" \
                         --parameters billingScope="$BILLING_SCOPE" \
                         --parameters workload="${{ parameters.workload }}" \
