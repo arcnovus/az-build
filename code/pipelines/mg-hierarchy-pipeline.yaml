@@ -1,5 +1,13 @@
 # Azure Pipeline to deploy Management Group Hierarchy
-# This pipeline deploys the mg-hierarchy Bicep template at the management group scope
+# This pipeline deploys the mg-hierarchy Bicep template at TENANT scope
+#
+# =============================================================================
+# DEPLOYMENT SCOPE: TENANT
+# =============================================================================
+# This pipeline uses tenant-scoped deployment (az deployment tenant) to avoid
+# validation issues when creating management groups with parent MGs that don't
+# exist yet. ARM validates all scopes BEFORE deployment starts, so management
+# group scoped deployments would fail when targeting non-existent parent MGs.
 #
 # =============================================================================
 # RBAC REQUIREMENTS
@@ -9,13 +17,6 @@
 #
 #   1. Management Group Contributor - To create/update/delete management groups
 #   2. Contributor - For Microsoft.Resources/deployments/write permission
-#
-# Why both roles are needed:
-#   The Management Group Contributor role alone does NOT include the
-#   Microsoft.Resources/deployments/write permission. ARM deployments create
-#   deployment resources at each management group scope. Since child management
-#   groups don't exist during initial deployment, these permissions must be
-#   inherited from the Tenant Root Group via the Contributor role.
 #
 # To assign these roles, run (as Owner/User Access Administrator):
 #
@@ -31,8 +32,7 @@
 #     --role "Contributor" \
 #     --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
 #
-# See docs/Management-Group-Hierarchy/Creating-Management-Group-Hierarchy.md
-# for full documentation.
+# See docs/RBAC-Requirements.md for full documentation.
 # =============================================================================
 
 trigger: none
@@ -78,8 +78,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                az deployment mg validate \
-                  --management-group-id $(azureTenantId) \
+                az deployment tenant validate \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
@@ -110,8 +109,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                az deployment mg what-if \
-                  --management-group-id $(azureTenantId) \
+                az deployment tenant what-if \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
@@ -148,9 +146,8 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      az deployment mg create \
+                      az deployment tenant create \
                         --name 'mg-hierarchy-$(Build.BuildNumber)' \
-                        --management-group-id $(azureTenantId) \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \

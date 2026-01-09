@@ -3,22 +3,23 @@
 // =============================================================================
 // This template deploys a hierarchical structure of management groups.
 //
+// DEPLOYMENT SCOPE:
+// This template uses 'tenant' scope to avoid validation issues when creating
+// management groups with parent MGs that don't exist yet. ARM validates all
+// module scopes BEFORE deployment starts, so using managementGroup scope with
+// non-existent parent MGs would fail validation.
+//
 // RBAC REQUIREMENTS:
-// The deploying identity (user or service principal) requires BOTH of the
-// following roles at the Tenant Root Management Group:
+// The deploying identity (user or service principal) requires these roles
+// at the Tenant Root Management Group:
 //
-//   1. Management Group Contributor - Create/update/delete management groups
-//   2. Contributor - Microsoft.Resources/deployments/write permission
-//
-// The Contributor role is required because ARM creates deployment resources
-// at each management group scope during nested module deployments. Since child
-// management groups don't exist during initial deployment, these permissions
-// must be inherited from the Tenant Root Group.
+//   - Management Group Contributor - Create/update/delete management groups
+//   - Contributor - Microsoft.Resources/deployments/write permission
 //
 // See: docs/Management-Group-Hierarchy/Creating-Management-Group-Hierarchy.md
 // =============================================================================
 
-targetScope = 'managementGroup'
+targetScope = 'tenant'
 
 @description('The tenant root management group ID')
 #disable-next-line no-unused-params // Used in bicepparam to construct managementGroups array
@@ -35,15 +36,19 @@ param orgDisplayName string
 @description('Array of management groups to create')
 param managementGroups array
 
-@batchSize(1) // Deploy sequentially to ensure parents exist before children (array must be sorted: parents first)
-module managementGroupModule 'br/public:avm/res/management/management-group:0.1.0' = [
+// Deploy management groups sequentially using tenant scope
+// Using @batchSize(1) ensures parents are created before children
+@batchSize(1)
+resource managementGroupResource 'Microsoft.Management/managementGroups@2023-04-01' = [
   for mg in managementGroups: {
     name: mg.id
-    scope: managementGroup(mg.parentId)
-    params: {
-      name: mg.id
+    properties: {
       displayName: mg.displayName
-      parentId: mg.parentId
+      details: {
+        parent: {
+          id: '/providers/Microsoft.Management/managementGroups/${mg.parentId}'
+        }
+      }
     }
   }
 ]
@@ -51,7 +56,7 @@ module managementGroupModule 'br/public:avm/res/management/management-group:0.1.
 output managementGroupIds array = [
   for (mg, i) in managementGroups: {
     id: mg.id
-    resourceId: managementGroupModule[i].outputs.resourceId
-    name: managementGroupModule[i].outputs.name
+    resourceId: managementGroupResource[i].id
+    name: managementGroupResource[i].name
   }
 ]

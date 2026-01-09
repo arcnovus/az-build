@@ -147,11 +147,12 @@ Ensure these variables are configured in your variable group (`common-variables`
 
 For local testing or manual deployment:
 
+> **Note**: This template uses **tenant scope** deployment (`az deployment tenant`) to avoid validation issues when creating management groups with parent MGs that don't exist yet.
+
 #### Validate Template
 
 ```bash
-az deployment mg validate \
-  --management-group-id <tenant-id> \
+az deployment tenant validate \
   --location canadacentral \
   --template-file code/bicep/mg-hierarchy/mg-hierarchy.bicep \
   --parameters code/bicep/mg-hierarchy/mg-hierarchy.bicepparam \
@@ -161,8 +162,7 @@ az deployment mg validate \
 #### What-If Analysis
 
 ```bash
-az deployment mg what-if \
-  --management-group-id <tenant-id> \
+az deployment tenant what-if \
   --location canadacentral \
   --template-file code/bicep/mg-hierarchy/mg-hierarchy.bicep \
   --parameters code/bicep/mg-hierarchy/mg-hierarchy.bicepparam \
@@ -172,9 +172,8 @@ az deployment mg what-if \
 #### Deploy
 
 ```bash
-az deployment mg create \
+az deployment tenant create \
   --name mg-hierarchy-$(date +%Y%m%d-%H%M%S) \
-  --management-group-id <tenant-id> \
   --location canadacentral \
   --template-file code/bicep/mg-hierarchy/mg-hierarchy.bicep \
   --parameters code/bicep/mg-hierarchy/mg-hierarchy.bicepparam \

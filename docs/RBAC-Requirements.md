@@ -6,7 +6,7 @@ This document outlines all Azure RBAC (Role-Based Access Control) requirements f
 
 | Pipeline | Deployment Scope | Required Roles | Scope |
 |----------|------------------|----------------|-------|
-| mg-hierarchy | Management Group | Management Group Contributor, Contributor | Tenant Root MG |
+| mg-hierarchy | Tenant | Management Group Contributor, Contributor | Tenant Root MG |
 | governance | Management Group | Resource Policy Contributor | Target MG |
 | sub-vending | Management Group | Owner (for subscription creation) | Tenant Root MG + Billing |
 | monitoring | Subscription | Contributor | Subscription |
@@ -22,7 +22,9 @@ This document outlines all Azure RBAC (Role-Based Access Control) requirements f
 
 ### 1. Management Group Hierarchy (`mg-hierarchy-pipeline`)
 
-**Target Scope**: Management Group (Tenant Root)
+**Target Scope**: Tenant (uses `az deployment tenant`)
+
+> **Note**: This pipeline deploys at **tenant scope** to avoid validation issues when creating management groups with parent MGs that don't exist yet. ARM validates all scopes before deployment starts, so management group scoped deployments would fail when targeting non-existent parent MGs.
 
 | Role | Scope | Purpose |
 |------|-------|---------|
@@ -31,7 +33,7 @@ This document outlines all Azure RBAC (Role-Based Access Control) requirements f
 
 #### Why Both Roles Are Needed
 
-The `Management Group Contributor` role alone does NOT include `Microsoft.Resources/deployments/write` permission. ARM creates deployment resources at each management group scope during nested module deployments. Since child management groups don't exist during initial deployment, these permissions must be inherited from the Tenant Root Group via the `Contributor` role.
+The `Management Group Contributor` role alone does NOT include `Microsoft.Resources/deployments/write` permission. The `Contributor` role provides this permission at the Tenant Root level, which is inherited to all child scopes.
 
 #### Assignment Commands
 
