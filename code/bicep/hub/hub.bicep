@@ -16,8 +16,8 @@ targetScope = 'subscription'
 // PARAMETERS
 // ============================================================================
 
-@description('The purpose of the hub infrastructure')
-param purpose string = 'hub'
+@description('The workload alias used in naming conventions (e.g., hub, mngmnt)')
+param workloadAlias string = 'hub'
 
 @description('The environment (e.g., live, dev, test)')
 param environment string = 'live'
@@ -90,28 +90,28 @@ param azureFirewallTier string = 'Standard'
 // ============================================================================
 
 // Naming convention variables
-var resourceGroupName = 'rg-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var resourceGroupName = 'rg-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 var networkWatcherName = 'NetworkWatcher_${locationCode}'
-var avnmName = 'avnm-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var hubVnetName = 'vnet-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var avnmName = 'avnm-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var hubVnetName = 'vnet-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Optional resource names
-var appGatewayName = 'agw-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var appGatewayPipName = 'pip-agw-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var frontDoorName = 'afd-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var vpnGatewayName = 'vpngw-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var vpnGatewayPipName = 'pip-vpngw-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var azureFirewallName = 'afw-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var azureFirewallPipName = 'pip-afw-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var azureFirewallPolicyName = 'afwp-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var ddosProtectionPlanName = 'ddos-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var keyVaultName = 'kv-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var dnsResolverName = 'dnspr-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var ipamPoolName = 'ipam-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var appGatewayName = 'agw-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var appGatewayPipName = 'pip-agw-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var frontDoorName = 'afd-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var vpnGatewayName = 'vpngw-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var vpnGatewayPipName = 'pip-vpngw-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var azureFirewallName = 'afw-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var azureFirewallPipName = 'pip-afw-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var azureFirewallPolicyName = 'afwp-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var ddosProtectionPlanName = 'ddos-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var keyVaultName = 'kv-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var dnsResolverName = 'dnspr-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var ipamPoolName = 'ipam-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Common tags
 var commonTags = {
-  Project: purpose
+  Project: workloadAlias
   Environment: environment
   Owner: owner
   ManagedBy: managedBy
@@ -479,7 +479,7 @@ module azureFirewallPip 'br/public:avm/res/network/public-ip-address:0.9.0' = if
 // OPTIONAL: APPLICATION GATEWAY WAF POLICY
 // ============================================================================
 
-var appGatewayWafPolicyName = 'wafp-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var appGatewayWafPolicyName = 'wafp-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 module appGatewayWafPolicy 'br/public:avm/res/network/application-gateway-web-application-firewall-policy:0.2.0' = if (enableAppGatewayWAF) {
   name: 'deploy-${appGatewayWafPolicyName}'

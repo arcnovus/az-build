@@ -96,7 +96,7 @@ Use `cloudops.bicep` to deploy the workload:
 
 DevCenter is the organizational container for Managed DevOps Pools:
 
-- **Pattern**: `dc-{purpose}-{environment}-{locationCode}-{instanceNumber}`
+- **Pattern**: `dc-{workloadAlias}-{environment}-{locationCode}-{instanceNumber}`
 - **Example**: `dc-devcenter-live-cac-001`
 - Typically deployed once per organization
 - Shared across multiple pools
@@ -105,7 +105,7 @@ DevCenter is the organizational container for Managed DevOps Pools:
 
 Enables private networking for Managed DevOps Pools:
 
-- **Pattern**: `nc-{purpose}-{environment}-{locationCode}-{instanceNumber}`
+- **Pattern**: `nc-{workloadAlias}-{environment}-{locationCode}-{instanceNumber}`
 - **Example**: `nc-devcenter-live-cac-001`
 - Attaches to CloudOps spoke subnet
 - Azure AD join (no on-premises domain required)
@@ -114,7 +114,7 @@ Enables private networking for Managed DevOps Pools:
 
 Organizational container for pools within CloudOps:
 
-- **Pattern**: `dcp-{purpose}-{environment}-{locationCode}-{instanceNumber}`
+- **Pattern**: `dcp-{workloadAlias}-{environment}-{locationCode}-{instanceNumber}`
 - **Example**: `dcp-cloudops-live-cac-001`
 - Links to the DevCenter
 
@@ -122,7 +122,7 @@ Organizational container for pools within CloudOps:
 
 Azure-managed DevOps agents with native scale-to-zero:
 
-- **Pattern**: `mdp-{purpose}-{environment}-{locationCode}-{instanceNumber}`
+- **Pattern**: `mdp-{workloadAlias}-{environment}-{locationCode}-{instanceNumber}`
 - **Example**: `mdp-cloudops-live-cac-001`
 - Automatic agent provisioning and updates
 - Native scale-to-zero support
@@ -211,13 +211,13 @@ CloudOps is deployed as an Azure Deployment Stack:
 
 | Resource Type | Pattern | Example |
 |---------------|---------|---------|
-| DevCenter RG | `rg-{purpose}-{env}-{loc}-{instance}` | `rg-devcenter-live-cac-001` |
-| DevCenter | `dc-{purpose}-{env}-{loc}-{instance}` | `dc-devcenter-live-cac-001` |
-| Network Connection | `nc-{purpose}-{env}-{loc}-{instance}` | `nc-devcenter-live-cac-001` |
-| CloudOps RG | `rg-{purpose}-{env}-{loc}-{instance}` | `rg-cloudops-live-cac-001` |
-| DevCenter Project | `dcp-{purpose}-{env}-{loc}-{instance}` | `dcp-cloudops-live-cac-001` |
-| Managed Pool | `mdp-{purpose}-{env}-{loc}-{instance}` | `mdp-cloudops-live-cac-001` |
-| Deployment Stack | `stack-{purpose}-{env}-{loc}-{instance}` | `stack-cloudops-live-cac-001` |
+| DevCenter RG | `rg-{workloadAlias}-{env}-{loc}-{instance}` | `rg-devcenter-live-cac-001` |
+| DevCenter | `dc-{workloadAlias}-{env}-{loc}-{instance}` | `dc-devcenter-live-cac-001` |
+| Network Connection | `nc-{workloadAlias}-{env}-{loc}-{instance}` | `nc-devcenter-live-cac-001` |
+| CloudOps RG | `rg-{workloadAlias}-{env}-{loc}-{instance}` | `rg-cloudops-live-cac-001` |
+| DevCenter Project | `dcp-{workloadAlias}-{env}-{loc}-{instance}` | `dcp-cloudops-live-cac-001` |
+| Managed Pool | `mdp-{workloadAlias}-{env}-{loc}-{instance}` | `mdp-cloudops-live-cac-001` |
+| Deployment Stack | `stack-{workloadAlias}-{env}-{loc}-{instance}` | `stack-cloudops-live-cac-001` |
 
 ## Security Considerations
 

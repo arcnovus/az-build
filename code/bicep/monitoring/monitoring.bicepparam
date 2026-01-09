@@ -1,6 +1,6 @@
 using 'monitoring.bicep'
 
-param purpose = 'monitoring'
+param workloadAlias = 'monitoring'
 
 param environment = 'live'
 

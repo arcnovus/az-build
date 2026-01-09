@@ -24,8 +24,8 @@ targetScope = 'subscription'
 // PARAMETERS
 // ============================================================================
 
-@description('The purpose of the infrastructure')
-param purpose string = 'cloudops'
+@description('The workload alias used in naming conventions (e.g., cloudops, hub, mngmnt)')
+param workloadAlias string = 'cloudops'
 
 @description('The environment (e.g., dev, test, prod, live)')
 param environment string = 'live'
@@ -85,13 +85,13 @@ param poolImageName string = 'ubuntu-22.04/latest'
 // ============================================================================
 
 // Naming convention variables
-var resourceGroupName = 'rg-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var devCenterProjectName = 'dcp-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var managedPoolName = 'mdp-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var resourceGroupName = 'rg-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var devCenterProjectName = 'dcp-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var managedPoolName = 'mdp-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Common tags
 var commonTags = {
-  Project: purpose
+  Project: workloadAlias
   Environment: environment
   Owner: owner
   ManagedBy: managedBy

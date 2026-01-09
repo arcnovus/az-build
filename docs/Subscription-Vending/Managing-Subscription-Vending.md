@@ -88,9 +88,9 @@ az account management-group subscription remove \
 
 ### 1. Naming Convention
 
-- **Consistency**: Always follow the `subcr-<purpose>-<env>-<loc>-<instance>` pattern
-- **Documentation**: Document the purpose of each subscription
-- **Avoid Conflicts**: Use unique instance numbers for each purpose/environment combination
+- **Consistency**: Always follow the `subcr-<workloadAlias>-<env>-<loc>-<instance>` pattern
+- **Documentation**: Document the intent of each subscription
+- **Avoid Conflicts**: Use unique instance numbers for each workloadAlias/environment combination
 - **Review Regularly**: Periodically review subscription names for consistency
 
 ### 2. Management Group Placement
@@ -124,7 +124,7 @@ az account management-group subscription remove \
 ### 6. Subscription Lifecycle
 
 - **Documentation**: Maintain documentation for each subscription
-- **Purpose Tracking**: Track the purpose and owner of each subscription
+- **Workload Tracking**: Track the workload alias and owner of each subscription
 - **Decommissioning**: Have a process for decommissioning unused subscriptions
 - **Renaming**: Avoid renaming subscriptions after creation (use tags for additional context)
 

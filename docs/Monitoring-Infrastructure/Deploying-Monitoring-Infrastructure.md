@@ -23,7 +23,7 @@ The `monitoring.bicepparam` file contains the deployment configuration:
 ```bicep
 using 'monitoring.bicep'
 
-param purpose = 'monitoring'
+param workloadAlias = 'monitoring'
 param environment = 'live'
 param locationCode = 'cac'
 param instanceNumber = '001'
@@ -37,7 +37,7 @@ param managedBy = 'Bicep'
 
 | Parameter | Description | Default | Valid Values |
 |-----------|-------------|---------|--------------|
-| `purpose` | Purpose identifier for naming | `monitoring` | Any alphanumeric string |
+| `workloadAlias` | Workload alias for naming | `monitoring` | Any alphanumeric string |
 | `environment` | Environment name | `live` | `nonprod`, `dev`, `test`, `uat`, `staging`, `prod`, `live` |
 | `locationCode` | Short location code | `cac` | `cac`, `cae`, `eus`, etc. |
 | `instanceNumber` | Instance identifier | `001` | Three-digit string |
@@ -68,7 +68,7 @@ The pipeline provides automated validation, what-if analysis, and deployment usi
 | Parameter | Description |
 |-----------|-------------|
 | Monitoring Subscription ID | Target subscription for deployment |
-| Purpose | Purpose identifier (default: `monitoring`) |
+| Workload Alias | Workload alias for naming (default: `monitoring`) |
 | Environment | Target environment |
 | Location Code | Short location code |
 | Instance Number | Instance identifier |
@@ -215,7 +215,7 @@ The deployment provides these outputs:
 
 3. **Name Already Exists**
    - Resource group or workspace name may already exist
-   - Change the instance number or use a different purpose
+   - Change the instance number or use a different workloadAlias
 
 4. **Deployment Stack Conflict**
    - A stack with the same name may already exist

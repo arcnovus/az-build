@@ -8,7 +8,7 @@ param billingScope = ''
 
 param workload = 'Production'
 
-param purpose = 'example-project'
+param workloadAlias = 'example-project'
 
 param environment = 'dev'
 

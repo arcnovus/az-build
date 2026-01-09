@@ -18,9 +18,9 @@ Hub Subscription (Connectivity)
         │
         ▼
 Spoke Subscription (Workload)
-└── Deployment Stack: stack-{purpose}-{env}-{loc}-{instance}
-    └── Resource Group: rg-{purpose}-{env}-{loc}-{instance}
-        └── Spoke Virtual Network: vnet-{purpose}-{env}-{loc}-{instance}
+└── Deployment Stack: stack-{workloadAlias}-{env}-{loc}-{instance}
+    └── Resource Group: rg-{workloadAlias}-{env}-{loc}-{instance}
+        └── Spoke Virtual Network: vnet-{workloadAlias}-{env}-{loc}-{instance}
             ├── Workload Subnets (configurable)
             ├── Private DNS Zone Link → Hub Private DNS Zone
             └── IPAM Static CIDR Allocation (optional)
@@ -55,14 +55,14 @@ Use `spoke-networking.bicep` to deploy networking infrastructure:
 
 The spoke infrastructure is deployed into a dedicated resource group:
 
-- **Pattern**: `rg-{purpose}-{environment}-{locationCode}-{instanceNumber}`
+- **Pattern**: `rg-{workloadAlias}-{environment}-{locationCode}-{instanceNumber}`
 - **Example**: `rg-webapp-dev-cac-001`
 
 ### Spoke Virtual Network
 
 The spoke VNet provides network isolation for workloads:
 
-- **Pattern**: `vnet-{purpose}-{environment}-{locationCode}-{instanceNumber}`
+- **Pattern**: `vnet-{workloadAlias}-{environment}-{locationCode}-{instanceNumber}`
 - **Example**: `vnet-webapp-dev-cac-001`
 - Address space configurable (e.g., `10.1.0.0/16`)
 - Diagnostic settings to Log Analytics Workspace
@@ -179,9 +179,9 @@ All resources follow the standard naming pattern:
 
 | Resource | Pattern | Example |
 |----------|---------|---------|
-| Resource Group | `rg-{purpose}-{env}-{loc}-{instance}` | `rg-webapp-dev-cac-001` |
-| Virtual Network | `vnet-{purpose}-{env}-{loc}-{instance}` | `vnet-webapp-dev-cac-001` |
-| Deployment Stack | `stack-{purpose}-{env}-{loc}-{instance}` | `stack-webapp-dev-cac-001` |
+| Resource Group | `rg-{workloadAlias}-{env}-{loc}-{instance}` | `rg-webapp-dev-cac-001` |
+| Virtual Network | `vnet-{workloadAlias}-{env}-{loc}-{instance}` | `vnet-webapp-dev-cac-001` |
+| Deployment Stack | `stack-{workloadAlias}-{env}-{loc}-{instance}` | `stack-webapp-dev-cac-001` |
 
 ## Azure Verified Modules
 

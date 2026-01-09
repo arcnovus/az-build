@@ -36,7 +36,7 @@ Use the subscription vending pipeline to create the spoke subscription.
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `subscriptionDisplayName` | Display name for the subscription | `WebApp Dev Subscription` |
-| `purpose` | Project/workload name | `webapp` |
+| `workloadAlias` | Workload alias for naming | `webapp` |
 | `environment` | Environment type | `dev` |
 | `locationCode` | Location code | `cac` |
 | `instanceNumber` | Instance number | `001` |
@@ -69,7 +69,7 @@ Use the spoke networking pipeline to deploy VNet and connect to hub.
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `subscriptionId` | Spoke subscription ID (from Stage 1) | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `purpose` | Project/workload name (match Stage 1) | `webapp` |
+| `workloadAlias` | Workload alias for naming (match Stage 1) | `webapp` |
 | `environment` | Environment type (match Stage 1) | `dev` |
 | `locationCode` | Location code | `cac` |
 | `instanceNumber` | Instance number | `001` |

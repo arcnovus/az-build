@@ -7,7 +7,7 @@ using 'spoke-networking.bicep'
 
 // Core naming parameters
 // These identify the workload/project and its environment
-param purpose = 'example-workload'
+param workloadAlias = 'example-workload'
 
 param environment = 'dev'
 

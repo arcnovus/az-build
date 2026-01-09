@@ -40,7 +40,7 @@ Use the subscription vending pipeline to create the CloudOps subscription.
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `subscriptionDisplayName` | Display name for the subscription | `CloudOps Production` |
-| `purpose` | Project/workload name | `cloudops` |
+| `workloadAlias` | Workload alias for naming | `cloudops` |
 | `environment` | Environment type | `live` |
 | `locationCode` | Location code | `cac` |
 | `instanceNumber` | Instance number | `001` |
@@ -73,7 +73,7 @@ Use the spoke networking pipeline to deploy VNet and connect to hub.
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `subscriptionId` | CloudOps subscription ID (from Stage 1) | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `purpose` | Project/workload name (match Stage 1) | `cloudops` |
+| `workloadAlias` | Workload alias for naming (match Stage 1) | `cloudops` |
 | `environment` | Environment type (match Stage 1) | `live` |
 | `locationCode` | Location code | `cac` |
 | `instanceNumber` | Instance number | `001` |
@@ -146,7 +146,7 @@ Use the DevCenter pipeline to deploy DevCenter and Network Connection.
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `subscriptionId` | CloudOps subscription ID (from Stage 1) | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `purpose` | Purpose identifier | `devcenter` |
+| `workloadAlias` | Workload alias for naming | `devcenter` |
 | `environment` | Environment type | `live` |
 | `locationCode` | Location code | `cac` |
 | `instanceNumber` | Instance number | `001` |
@@ -191,7 +191,7 @@ Use the CloudOps pipeline to deploy the Managed DevOps Pool.
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `subscriptionId` | CloudOps subscription ID (from Stage 1) | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
-| `purpose` | Project/workload name | `cloudops` |
+| `workloadAlias` | Workload alias for naming | `cloudops` |
 | `environment` | Environment type | `live` |
 | `locationCode` | Location code | `cac` |
 | `instanceNumber` | Instance number | `001` |

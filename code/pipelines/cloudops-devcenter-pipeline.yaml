@@ -28,8 +28,8 @@ parameters:
     type: string
     default: ""
   # Core naming parameters
-  - name: purpose
-    displayName: "Purpose"
+  - name: workloadAlias
+    displayName: "Workload Alias"
     type: string
     default: "devcenter"
   - name: environment
@@ -120,8 +120,8 @@ stages:
               inlineScript: |
                 PARAMS=""
                 # Core naming parameters
-                if [ -n "${{ parameters.purpose }}" ]; then
-                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                if [ -n "${{ parameters.workloadAlias }}" ]; then
+                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
                   PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -152,7 +152,7 @@ stages:
                 fi
 
                 az stack sub validate \
-                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
@@ -186,8 +186,8 @@ stages:
               inlineScript: |
                 PARAMS=""
                 # Core naming parameters
-                if [ -n "${{ parameters.purpose }}" ]; then
-                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                if [ -n "${{ parameters.workloadAlias }}" ]; then
+                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
                   PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -218,7 +218,7 @@ stages:
                 fi
 
                 az stack sub create \
-                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
@@ -259,8 +259,8 @@ stages:
                     inlineScript: |
                       PARAMS=""
                       # Core naming parameters
-                      if [ -n "${{ parameters.purpose }}" ]; then
-                        PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                      if [ -n "${{ parameters.workloadAlias }}" ]; then
+                        PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                       fi
                       if [ -n "${{ parameters.environment }}" ]; then
                         PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -291,7 +291,7 @@ stages:
                       fi
 
                       az stack sub create \
-                        --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                        --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                         --subscription "${{ parameters.subscriptionId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \

@@ -35,7 +35,7 @@ Hub Subscription
 ### Resource Group
 
 The hub infrastructure is deployed into a dedicated resource group following the naming convention:
-- **Pattern**: `rg-<purpose>-<env>-<loc>-<instance>`
+- **Pattern**: `rg-<workloadAlias>-<env>-<loc>-<instance>`
 - **Example**: `rg-hub-live-cac-001`
 
 ### Network Watcher
@@ -215,19 +215,19 @@ Resources follow a consistent naming convention:
 
 | Resource Type | Pattern | Example |
 |---------------|---------|---------|
-| Resource Group | `rg-<purpose>-<env>-<loc>-<instance>` | `rg-hub-live-cac-001` |
-| Virtual Network | `vnet-<purpose>-<env>-<loc>-<instance>` | `vnet-hub-live-cac-001` |
+| Resource Group | `rg-<workloadAlias>-<env>-<loc>-<instance>` | `rg-hub-live-cac-001` |
+| Virtual Network | `vnet-<workloadAlias>-<env>-<loc>-<instance>` | `vnet-hub-live-cac-001` |
 | Network Watcher | `NetworkWatcher_<loc>` | `NetworkWatcher_cac` |
-| AVNM | `avnm-<purpose>-<env>-<loc>-<instance>` | `avnm-hub-live-cac-001` |
-| Application Gateway | `agw-<purpose>-<env>-<loc>-<instance>` | `agw-hub-live-cac-001` |
-| Azure Firewall | `afw-<purpose>-<env>-<loc>-<instance>` | `afw-hub-live-cac-001` |
-| VPN Gateway | `vpngw-<purpose>-<env>-<loc>-<instance>` | `vpngw-hub-live-cac-001` |
-| Key Vault | `kv-<purpose>-<env>-<loc>-<instance>` | `kv-hub-live-cac-001` |
-| IPAM Pool | `ipam-<purpose>-<env>-<loc>-<instance>` | `ipam-hub-live-cac-001` |
+| AVNM | `avnm-<workloadAlias>-<env>-<loc>-<instance>` | `avnm-hub-live-cac-001` |
+| Application Gateway | `agw-<workloadAlias>-<env>-<loc>-<instance>` | `agw-hub-live-cac-001` |
+| Azure Firewall | `afw-<workloadAlias>-<env>-<loc>-<instance>` | `afw-hub-live-cac-001` |
+| VPN Gateway | `vpngw-<workloadAlias>-<env>-<loc>-<instance>` | `vpngw-hub-live-cac-001` |
+| Key Vault | `kv-<workloadAlias>-<env>-<loc>-<instance>` | `kv-hub-live-cac-001` |
+| IPAM Pool | `ipam-<workloadAlias>-<env>-<loc>-<instance>` | `ipam-hub-live-cac-001` |
 
 ### Naming Components
 
-- **purpose**: The function of the resources (e.g., `hub`)
+- **workloadAlias**: The workload alias for naming (e.g., `hub`, `mngmnt`)
 - **env**: Environment identifier (e.g., `live`, `nonprod`, `dev`)
 - **loc**: Location code (e.g., `cac` for Canada Central)
 - **instance**: Instance number (e.g., `001`)
@@ -268,7 +268,7 @@ The default deployment creates:
 
 | Parameter | Default Value |
 |-----------|---------------|
-| Purpose | `hub` |
+| Workload Alias | `hub` |
 | Environment | `live` |
 | Location | `canadacentral` |
 | Location Code | `cac` |

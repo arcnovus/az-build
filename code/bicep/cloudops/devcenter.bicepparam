@@ -7,7 +7,7 @@ using 'devcenter.bicep'
 // ============================================================================
 
 // Naming and location
-param purpose = 'devcenter'
+param workloadAlias = 'devcenter'
 param environment = 'live'
 param locationCode = 'cac'
 param instanceNumber = '001'

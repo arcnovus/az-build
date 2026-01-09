@@ -30,7 +30,7 @@ param subscriptionDisplayName = 'example-subscription'
 param managementGroupId = 'your-management-group-id'
 param billingScope = ''
 param workload = 'Production'
-param purpose = 'example-project'
+param workloadAlias = 'example-project'
 param environment = 'dev'
 param locationCode = 'cac'
 param instanceNumber = '001'
@@ -46,7 +46,7 @@ param managedBy = 'Bicep'
 | `managementGroupId` | Management group ID where subscription will be placed | - | Yes | Valid management group ID |
 | `billingScope` | Billing scope for EA/MCA scenarios | `''` | No | `/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}` |
 | `workload` | Workload type | `Production` | No | `Production`, `DevTest` |
-| `purpose` | Purpose or project name | - | Yes | Any alphanumeric string |
+| `workloadAlias` | Workload alias for naming conventions | - | Yes | Any alphanumeric string |
 | `environment` | Environment identifier | - | Yes | `dev`, `test`, `uat`, `staging`, `prod`, `live`, `nonprod` |
 | `locationCode` | Short location code | `cac` | No | `cac`, `cae`, `eus`, etc. |
 | `instanceNumber` | Instance identifier | - | Yes | Three-digit string (e.g., `001`) |
@@ -57,10 +57,10 @@ param managedBy = 'Bicep'
 
 The subscription alias is automatically generated from the parameters:
 
-**Pattern**: `subcr-<purpose>-<environment>-<locationCode>-<instanceNumber>`
+**Pattern**: `subcr-<workloadAlias>-<environment>-<locationCode>-<instanceNumber>`
 
 **Example**: 
-- Purpose: `hub`
+- Workload Alias: `hub`
 - Environment: `live`
 - Location Code: `cac`
 - Instance Number: `001`
@@ -112,7 +112,7 @@ The pipeline provides automated validation, what-if analysis, and deployment at 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | Subscription Display Name | Human-readable subscription name | `Hub Infrastructure - Production` |
-| Purpose/Project/Workload Name | Purpose identifier | `hub` |
+| Workload Alias | Workload alias for naming | `hub` |
 | Environment | Target environment | `live` |
 | Location Code | Short location code | `cac` |
 | Instance Number | Instance identifier | `001` |
@@ -150,7 +150,7 @@ az deployment mg validate \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
   --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
-  --parameters purpose='hub' \
+  --parameters workloadAlias='hub' \
   --parameters environment='live' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -167,7 +167,7 @@ az deployment mg what-if \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
   --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
-  --parameters purpose='hub' \
+  --parameters workloadAlias='hub' \
   --parameters environment='live' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -185,7 +185,7 @@ az deployment mg create \
   --parameters code/bicep/sub-vending/sub-vending.bicepparam \
   --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
-  --parameters purpose='hub' \
+  --parameters workloadAlias='hub' \
   --parameters environment='live' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -204,7 +204,7 @@ az deployment mg create \
   --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
   --parameters billingScope='/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' \
-  --parameters purpose='hub' \
+  --parameters workloadAlias='hub' \
   --parameters environment='live' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -285,7 +285,7 @@ az deployment mg create \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
   --parameters subscriptionDisplayName='Hub Infrastructure - Production' \
   --parameters managementGroupId='mg-connectivity' \
-  --parameters purpose='hub' \
+  --parameters workloadAlias='hub' \
   --parameters environment='prod' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -305,7 +305,7 @@ az deployment mg create \
   --template-file code/bicep/sub-vending/sub-vending.bicep \
   --parameters subscriptionDisplayName='Application Development - Dev' \
   --parameters managementGroupId='mg-online-non-prod' \
-  --parameters purpose='app-dev' \
+  --parameters workloadAlias='app-dev' \
   --parameters environment='dev' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -326,7 +326,7 @@ az deployment mg create \
   --parameters subscriptionDisplayName='Monitoring Infrastructure - Production' \
   --parameters managementGroupId='mg-management' \
   --parameters billingScope='/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}' \
-  --parameters purpose='monitoring' \
+  --parameters workloadAlias='monitoring' \
   --parameters environment='prod' \
   --parameters locationCode='cac' \
   --parameters instanceNumber='001' \
@@ -352,7 +352,7 @@ az deployment mg create \
 
 3. **Subscription Alias Already Exists**
    - The subscription alias must be unique
-   - Change the instance number or use a different purpose/environment combination
+   - Change the instance number or use a different workloadAlias/environment combination
    - Check for existing subscriptions with the same alias
 
 4. **Invalid Billing Scope**

@@ -17,8 +17,8 @@ targetScope = 'subscription'
 // PARAMETERS
 // ============================================================================
 
-@description('The purpose of the infrastructure')
-param purpose string = 'devcenter'
+@description('The workload alias used in naming conventions (e.g., devcenter, hub, mngmnt)')
+param workloadAlias string = 'devcenter'
 
 @description('The environment (e.g., dev, test, prod, live)')
 param environment string = 'live'
@@ -51,13 +51,13 @@ param logAnalyticsWorkspaceResourceId string
 // ============================================================================
 
 // Naming convention variables
-var resourceGroupName = 'rg-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var devCenterName = 'dc-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var networkConnectionName = 'nc-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var resourceGroupName = 'rg-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var devCenterName = 'dc-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var networkConnectionName = 'nc-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Common tags
 var commonTags = {
-  Project: purpose
+  Project: workloadAlias
   Environment: environment
   Owner: owner
   ManagedBy: managedBy

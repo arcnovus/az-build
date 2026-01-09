@@ -6,7 +6,7 @@ using 'hub.bicep'
 // ============================================================================
 
 // Core naming parameters
-param purpose = 'hub'
+param workloadAlias = 'hub'
 
 param environment = 'live'
 

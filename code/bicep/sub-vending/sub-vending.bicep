@@ -13,8 +13,8 @@ param billingScope string = ''
 @allowed(['Production', 'DevTest'])
 param workload string = 'Production'
 
-@description('The purpose or project name for the subscription')
-param purpose string
+@description('The workload alias used in naming conventions (e.g., hub, mngmnt, cloudops)')
+param workloadAlias string
 
 @description('The environment for the subscription (e.g., dev, test, prod)')
 param environment string
@@ -31,8 +31,8 @@ param owner string
 @description('What manages this subscription (e.g., Bicep, Terraform)')
 param managedBy string = 'Bicep'
 
-// Construct subscription alias name following naming convention: subcr-<purpose>-<environment>-<locationcode>-<instance number>
-var subscriptionAliasName = 'subcr-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+// Construct subscription alias name following naming convention: subcr-<workloadAlias>-<environment>-<locationcode>-<instance number>
+var subscriptionAliasName = 'subcr-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Use AVM sub-vending module to create subscription and assign to management group
 module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
@@ -47,7 +47,7 @@ module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
     subscriptionAliasEnabled: true
     virtualNetworkEnabled: false
     subscriptionTags: {
-      Project: purpose
+      Project: workloadAlias
       Environment: environment
       Owner: owner
       ManagedBy: managedBy

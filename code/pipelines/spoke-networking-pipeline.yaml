@@ -47,7 +47,7 @@ variables:
   - name: parametersFile
     value: "$(bicepPath)/spoke-networking.bicepparam"
   - name: stackName
-    value: "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}"
+    value: "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}"
 
 parameters:
   # Target spoke subscription
@@ -56,8 +56,8 @@ parameters:
     type: string
     default: ""
   # Core naming parameters
-  - name: purpose
-    displayName: "Purpose/Project/Workload Name"
+  - name: workloadAlias
+    displayName: "Workload Alias"
     type: string
     default: ""
   - name: environment
@@ -177,8 +177,8 @@ stages:
               inlineScript: |
                 PARAMS=""
                 # Core naming parameters
-                if [ -n "${{ parameters.purpose }}" ]; then
-                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                if [ -n "${{ parameters.workloadAlias }}" ]; then
+                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
                   PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -230,7 +230,7 @@ stages:
                 fi
 
                 az stack sub validate \
-                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
@@ -264,8 +264,8 @@ stages:
               inlineScript: |
                 PARAMS=""
                 # Core naming parameters
-                if [ -n "${{ parameters.purpose }}" ]; then
-                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                if [ -n "${{ parameters.workloadAlias }}" ]; then
+                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
                   PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -317,7 +317,7 @@ stages:
                 fi
 
                 az stack sub create \
-                  --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "${{ parameters.subscriptionId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
@@ -358,8 +358,8 @@ stages:
                     inlineScript: |
                       PARAMS=""
                       # Core naming parameters
-                      if [ -n "${{ parameters.purpose }}" ]; then
-                        PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                      if [ -n "${{ parameters.workloadAlias }}" ]; then
+                        PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                       fi
                       if [ -n "${{ parameters.environment }}" ]; then
                         PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -411,7 +411,7 @@ stages:
                       fi
 
                       az stack sub create \
-                        --name "stack-${{ parameters.purpose }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                        --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                         --subscription "${{ parameters.subscriptionId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \

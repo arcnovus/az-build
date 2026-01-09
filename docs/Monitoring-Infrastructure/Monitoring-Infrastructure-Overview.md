@@ -25,12 +25,12 @@ Resources follow a consistent naming convention:
 
 | Resource Type | Pattern | Example |
 |---------------|---------|---------|
-| Resource Group | `rg-<purpose>-<env>-<loc>-<instance>` | `rg-monitoring-live-cac-001` |
-| Log Analytics Workspace | `law-<purpose>-<env>-<loc>-<instance>` | `law-monitoring-live-cac-001` |
+| Resource Group | `rg-<workloadAlias>-<env>-<loc>-<instance>` | `rg-monitoring-live-cac-001` |
+| Log Analytics Workspace | `law-<workloadAlias>-<env>-<loc>-<instance>` | `law-monitoring-live-cac-001` |
 
 ### Naming Components
 
-- **purpose**: The function of the resources (e.g., `monitoring`)
+- **workloadAlias**: The workload alias for naming (e.g., `monitoring`, `hub`)
 - **env**: Environment identifier (e.g., `live`, `nonprod`, `dev`)
 - **loc**: Location code (e.g., `cac` for Canada Central)
 - **instance**: Instance number (e.g., `001`)
@@ -58,7 +58,7 @@ The default deployment creates:
 
 | Parameter | Default Value |
 |-----------|---------------|
-| Purpose | `monitoring` |
+| Workload Alias | `monitoring` |
 | Environment | `live` |
 | Location | `canadacentral` |
 | Location Code | `cac` |

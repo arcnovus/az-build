@@ -1,7 +1,7 @@
 targetScope = 'subscription'
 
-@description('The purpose of the monitoring infrastructure')
-param purpose string
+@description('The workload alias used in naming conventions (e.g., monitoring, hub, mngmnt)')
+param workloadAlias string
 
 @description('The environment (e.g., live, dev, test)')
 param environment string
@@ -26,18 +26,18 @@ param owner string
 @description('What manages this infrastructure (e.g., Bicep, Terraform)')
 param managedBy string = 'Bicep'
 
-// Construct workspace name following naming convention: law-<purpose>-<environment>-<loc>-<instance>
-var workspaceName = 'law-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+// Construct workspace name following naming convention: law-<workloadAlias>-<environment>-<loc>-<instance>
+var workspaceName = 'law-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Resource group name for monitoring resources
-var resourceGroupName = 'rg-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var resourceGroupName = 'rg-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Deploy resource group for monitoring resources
 resource monitoringResourceGroup 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   name: resourceGroupName
   location: location
   tags: {
-    Project: purpose
+    Project: workloadAlias
     Environment: environment
     Owner: owner
     ManagedBy: managedBy
@@ -53,7 +53,7 @@ module logAnalyticsWorkspace 'br/public:avm/res/operational-insights/workspace:0
     location: location
     dataRetention: dataRetention
     tags: {
-      Project: purpose
+      Project: workloadAlias
       Environment: environment
       Owner: owner
       ManagedBy: managedBy

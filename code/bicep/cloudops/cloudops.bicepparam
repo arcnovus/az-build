@@ -11,7 +11,7 @@ using 'cloudops.bicep'
 
 // Core naming parameters
 // These identify the CloudOps workload
-param purpose = 'cloudops'
+param workloadAlias = 'cloudops'
 
 param environment = 'live'
 

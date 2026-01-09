@@ -8,14 +8,14 @@ Subscription vending provides an automated, standardized way to create Azure sub
 
 ```
 Management Group Scope Deployment
-└── Subscription Alias (subcr-<purpose>-<env>-<loc>-<instance>)
+└── Subscription Alias (subcr-<workloadAlias>-<env>-<loc>-<instance>)
     └── Azure Subscription
         ├── Display Name
         ├── Management Group Assignment
         ├── Billing Scope (optional)
         ├── Workload Type (Production/DevTest)
         └── Tags:
-            ├── Project: <purpose>
+            ├── Project: <workloadAlias>
             ├── Environment: <environment>
             ├── Owner: <owner>
             └── ManagedBy: <managedBy>
@@ -27,12 +27,12 @@ Management Group Scope Deployment
 
 The subscription alias is a unique identifier that follows a consistent naming convention:
 
-- **Pattern**: `subcr-<purpose>-<environment>-<locationCode>-<instanceNumber>`
+- **Pattern**: `subcr-<workloadAlias>-<environment>-<locationCode>-<instanceNumber>`
 - **Example**: `subcr-hub-live-cac-001`
 
 **Components:**
 - **subcr**: Prefix indicating subscription creation
-- **purpose**: The project or workload name (e.g., `hub`, `spoke`, `monitoring`)
+- **workloadAlias**: The workload alias used in naming conventions (e.g., `hub`, `spoke`, `mngmnt`)
 - **environment**: Environment identifier (e.g., `dev`, `test`, `prod`, `live`)
 - **locationCode**: Short location code (e.g., `cac` for Canada Central)
 - **instanceNumber**: Instance identifier (e.g., `001`, `002`)
@@ -93,7 +93,7 @@ All subscriptions are automatically tagged with consistent metadata:
 
 | Tag | Description | Example |
 |-----|-------------|---------|
-| `Project` | Purpose or project name | `hub`, `monitoring`, `spoke` |
+| `Project` | Workload alias | `hub`, `monitoring`, `spoke` |
 | `Environment` | Environment identifier | `dev`, `test`, `prod`, `live` |
 | `Owner` | Subscription owner | Email address or team name |
 | `ManagedBy` | Management tool | `Bicep`, `Terraform`, `ARM` |
@@ -109,26 +109,26 @@ These tags enable:
 The subscription alias follows a strict naming convention to ensure consistency and enable automation:
 
 ```
-subcr-<purpose>-<environment>-<locationCode>-<instanceNumber>
+subcr-<workloadAlias>-<environment>-<locationCode>-<instanceNumber>
 ```
 
 ### Naming Components
 
 | Component | Description | Examples |
 |-----------|-------------|----------|
-| `purpose` | Project or workload identifier | `hub`, `spoke`, `monitoring`, `governance` |
+| `workloadAlias` | Workload alias for naming conventions | `hub`, `spoke`, `mngmnt`, `cloudops` |
 | `environment` | Environment name | `dev`, `test`, `uat`, `staging`, `prod`, `live`, `nonprod` |
 | `locationCode` | Short location code | `cac` (Canada Central), `cae` (Canada East), `eus` (East US) |
 | `instanceNumber` | Three-digit instance identifier | `001`, `002`, `003` |
 
 ### Examples
 
-| Purpose | Environment | Location | Instance | Alias |
-|---------|-------------|----------|----------|-------|
-| Hub | Live | Canada Central | 001 | `subcr-hub-live-cac-001` |
-| Monitoring | Prod | Canada Central | 001 | `subcr-monitoring-prod-cac-001` |
-| Spoke | Dev | Canada Central | 001 | `subcr-spoke-dev-cac-001` |
-| Governance | Nonprod | Canada Central | 001 | `subcr-governance-nonprod-cac-001` |
+| Workload Alias | Environment | Location | Instance | Alias |
+|----------------|-------------|----------|----------|-------|
+| hub | Live | Canada Central | 001 | `subcr-hub-live-cac-001` |
+| monitoring | Prod | Canada Central | 001 | `subcr-monitoring-prod-cac-001` |
+| spoke | Dev | Canada Central | 001 | `subcr-spoke-dev-cac-001` |
+| governance | Nonprod | Canada Central | 001 | `subcr-governance-nonprod-cac-001` |
 
 ## Azure Verified Module
 
@@ -194,7 +194,7 @@ The default deployment configuration:
 **Required Parameters:**
 - `subscriptionDisplayName`
 - `managementGroupId`
-- `purpose`
+- `workloadAlias`
 - `environment`
 - `instanceNumber`
 - `owner`
@@ -231,7 +231,7 @@ These outputs can be used for:
 
 Create a subscription for hub networking infrastructure:
 
-- **Purpose**: `hub`
+- **Workload Alias**: `hub`
 - **Environment**: `live`
 - **Management Group**: `mg-connectivity`
 - **Workload**: `Production`
@@ -240,7 +240,7 @@ Create a subscription for hub networking infrastructure:
 
 Create a subscription for development workloads:
 
-- **Purpose**: `app-dev`
+- **Workload Alias**: `app-dev`
 - **Environment**: `dev`
 - **Management Group**: `mg-online-non-prod`
 - **Workload**: `DevTest`
@@ -249,7 +249,7 @@ Create a subscription for development workloads:
 
 Create a subscription for monitoring infrastructure:
 
-- **Purpose**: `monitoring`
+- **Workload Alias**: `monitoring`
 - **Environment**: `prod`
 - **Management Group**: `mg-management`
 - **Workload**: `Production`
@@ -258,7 +258,7 @@ Create a subscription for monitoring infrastructure:
 
 Create a subscription for testing and experimentation:
 
-- **Purpose**: `sandbox`
+- **Workload Alias**: `sandbox`
 - **Environment**: `dev`
 - **Management Group**: `mg-sandbox`
 - **Workload**: `DevTest`
@@ -267,8 +267,8 @@ Create a subscription for testing and experimentation:
 
 ### 1. Naming Convention
 
-- **Follow the Pattern**: Always use the `subcr-<purpose>-<env>-<loc>-<instance>` pattern
-- **Be Descriptive**: Use clear, meaningful purpose and environment names
+- **Follow the Pattern**: Always use the `subcr-<workloadAlias>-<env>-<loc>-<instance>` pattern
+- **Be Descriptive**: Use clear, meaningful workload alias and environment names
 - **Consistency**: Maintain consistent naming across all subscriptions
 
 ### 2. Management Group Placement
@@ -279,7 +279,7 @@ Create a subscription for testing and experimentation:
 
 ### 3. Tagging
 
-- **Complete Information**: Always provide owner and purpose information
+- **Complete Information**: Always provide owner and workload alias information
 - **Consistent Values**: Use consistent tag values across subscriptions
 - **Review Regularly**: Periodically review and update tags
 

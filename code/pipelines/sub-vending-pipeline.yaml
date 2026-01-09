@@ -50,8 +50,8 @@ parameters:
     displayName: "Subscription Display Name"
     type: string
     default: ""
-  - name: purpose
-    displayName: "Purpose/Project/Workload Name"
+  - name: workloadAlias
+    displayName: "Workload Alias"
     type: string
     default: ""
   - name: environment
@@ -152,8 +152,8 @@ stages:
                 if [ -n "${{ parameters.workload }}" ]; then
                   PARAMS="$PARAMS --parameters workload='${{ parameters.workload }}'"
                 fi
-                if [ -n "${{ parameters.purpose }}" ]; then
-                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                if [ -n "${{ parameters.workloadAlias }}" ]; then
+                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
                   PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -217,8 +217,8 @@ stages:
                 if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
                   PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
                 fi
-                if [ -n "${{ parameters.purpose }}" ]; then
-                  PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                if [ -n "${{ parameters.workloadAlias }}" ]; then
+                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
                   PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
@@ -297,8 +297,8 @@ stages:
                       if [ -n "${{ parameters.subscriptionDisplayName }}" ]; then
                         PARAMS="$PARAMS --parameters subscriptionDisplayName='${{ parameters.subscriptionDisplayName }}'"
                       fi
-                      if [ -n "${{ parameters.purpose }}" ]; then
-                        PARAMS="$PARAMS --parameters purpose='${{ parameters.purpose }}'"
+                      if [ -n "${{ parameters.workloadAlias }}" ]; then
+                        PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
                       fi
                       if [ -n "${{ parameters.environment }}" ]; then
                         PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"

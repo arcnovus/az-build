@@ -15,8 +15,8 @@ targetScope = 'subscription'
 // PARAMETERS
 // ============================================================================
 
-@description('The purpose/project name for the spoke infrastructure')
-param purpose string
+@description('The workload alias used in naming conventions (e.g., webapp, cloudops, mngmnt)')
+param workloadAlias string
 
 @description('The environment (e.g., dev, test, prod)')
 param environment string
@@ -74,12 +74,12 @@ param customSubnets array = []
 // ============================================================================
 
 // Naming convention variables
-var resourceGroupName = 'rg-${purpose}-${environment}-${locationCode}-${instanceNumber}'
-var spokeVnetName = 'vnet-${purpose}-${environment}-${locationCode}-${instanceNumber}'
+var resourceGroupName = 'rg-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var spokeVnetName = 'vnet-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Common tags
 var commonTags = {
-  Project: purpose
+  Project: workloadAlias
   Environment: environment
   Owner: owner
   ManagedBy: managedBy
