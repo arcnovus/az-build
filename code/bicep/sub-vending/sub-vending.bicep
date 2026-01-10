@@ -42,6 +42,9 @@ targetScope = 'tenant'
 // PARAMETERS
 // ============================================================================
 
+@description('The project name used for tagging.')
+param projectName string
+
 @description('The management group ID (name) where the subscription will be placed (e.g. "corp-platform").')
 param managementGroupId string
 
@@ -107,7 +110,7 @@ resource subscriptionAlias 'Microsoft.Subscription/aliases@2024-08-01-preview' =
     additionalProperties: {
       managementGroupId: targetMgResourceId
       tags: {
-        Project: workloadAlias
+        Project: projectName
         Environment: environment
         Owner: owner
         ManagedBy: managedBy

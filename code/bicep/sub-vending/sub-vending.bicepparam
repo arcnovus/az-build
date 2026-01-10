@@ -1,5 +1,7 @@
 using 'sub-vending.bicep'
 
+param projectName = 'example-project'
+
 param managementGroupId = 'your-management-group-id'
 
 param billingScope = ''

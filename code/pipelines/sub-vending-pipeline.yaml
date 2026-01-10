@@ -56,8 +56,12 @@ variables:
     value: "code/pipelines/scripts"
 
 parameters:
+  - name: projectName
+    displayName: "Project Name (used for tagging)"
+    type: string
+    default: ""
   - name: workloadAlias
-    displayName: "Workload Alias"
+    displayName: "Workload Alias (used for naming conventions)"
     type: string
     default: ""
   - name: environment
@@ -190,6 +194,7 @@ stages:
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
                   --parameters "$(parametersFile)" \
+                  --parameters projectName="${{ parameters.projectName }}" \
                   --parameters managementGroupId="${{ parameters.managementGroupId }}" \
                   --parameters billingScope="$BILLING_SCOPE" \
                   --parameters workload="${{ parameters.workload }}" \
@@ -226,6 +231,7 @@ stages:
               scriptLocation: "inlineScript"
               inlineScript: |
                 bash $(scriptsPath)/lookup-subscription.sh \
+                  "${{ parameters.projectName }}" \
                   "${{ parameters.workloadAlias }}" \
                   "${{ parameters.environment }}" \
                   "${{ parameters.locationCode }}" \
@@ -257,6 +263,7 @@ stages:
                   --location "$(deploymentLocation)" \
                   --template-file "$(templateFile)" \
                   --parameters "$(parametersFile)" \
+                  --parameters projectName="${{ parameters.projectName }}" \
                   --parameters managementGroupId="${{ parameters.managementGroupId }}" \
                   --parameters billingScope="$BILLING_SCOPE" \
                   --parameters workload="${{ parameters.workload }}" \
@@ -331,6 +338,7 @@ stages:
                         --location "$(deploymentLocation)" \
                         --template-file "$(templateFile)" \
                         --parameters "$(parametersFile)" \
+                        --parameters projectName="${{ parameters.projectName }}" \
                         --parameters managementGroupId="${{ parameters.managementGroupId }}" \
                         --parameters billingScope="$BILLING_SCOPE" \
                         --parameters workload="${{ parameters.workload }}" \
