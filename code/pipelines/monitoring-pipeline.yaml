@@ -178,6 +178,7 @@ stages:
 
                 # Convert comma-separated email list from variable group to JSON array for Bicep
                 # Format: "email1@example.com,email2@example.com" -> JSON array of receiver objects
+                EMAIL_RECEIVERS="[]"
                 if [ -n "$(actionGroupEmails)" ]; then
                   EMAIL_RECEIVERS="["
                   IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
@@ -198,6 +199,7 @@ stages:
 
                 # Convert comma-separated SMS list from variable group to JSON array for Bicep
                 # Format: "1:5551234567,1:5559876543" -> JSON array of SMS receiver objects
+                SMS_RECEIVERS="[]"
                 if [ -n "$(actionGroupSmsNumbers)" ]; then
                   SMS_RECEIVERS="["
                   IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
@@ -219,27 +221,27 @@ stages:
                   SMS_RECEIVERS+="]"
                 fi
 
-                # Build the az stack command with proper array handling
-                # Arrays must be passed without quotes to avoid being treated as strings
-                CMD="az stack sub validate \
-                  --name \"stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}\" \
-                  --subscription \"$(monitoringSubscriptionId)\" \
+                # Write array parameters to a temp JSON file to avoid shell escaping issues
+                ARRAY_PARAMS_FILE=$(mktemp)
+                cat > "$ARRAY_PARAMS_FILE" << EOF
+                {
+                  "actionGroupEmailReceivers": { "value": ${EMAIL_RECEIVERS} },
+                  "actionGroupSmsReceivers": { "value": ${SMS_RECEIVERS} }
+                }
+                EOF
+
+                az stack sub validate \
+                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --subscription "$(monitoringSubscriptionId)" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
+                  --parameters @"$ARRAY_PARAMS_FILE" \
                   --deny-settings-mode ${{ parameters.denySettingsMode }} \
                   --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
-                  $PARAMS"
+                  $PARAMS
 
-                # Add array parameters without quotes
-                if [ -n "$EMAIL_RECEIVERS" ]; then
-                  CMD="$CMD --parameters actionGroupEmailReceivers=$EMAIL_RECEIVERS"
-                fi
-                if [ -n "$SMS_RECEIVERS" ]; then
-                  CMD="$CMD --parameters actionGroupSmsReceivers=$SMS_RECEIVERS"
-                fi
-
-                eval $CMD
+                rm -f "$ARRAY_PARAMS_FILE"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -295,6 +297,7 @@ stages:
                 fi
 
                 # Convert comma-separated email list from variable group to JSON array for Bicep
+                EMAIL_RECEIVERS="[]"
                 if [ -n "$(actionGroupEmails)" ]; then
                   EMAIL_RECEIVERS="["
                   IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
@@ -314,6 +317,7 @@ stages:
                 fi
 
                 # Convert comma-separated SMS list from variable group to JSON array for Bicep
+                SMS_RECEIVERS="[]"
                 if [ -n "$(actionGroupSmsNumbers)" ]; then
                   SMS_RECEIVERS="["
                   IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
@@ -335,26 +339,28 @@ stages:
                   SMS_RECEIVERS+="]"
                 fi
 
-                # Build the az stack command with proper array handling
-                CMD="az stack sub create \
-                  --name \"stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}\" \
-                  --subscription \"$(monitoringSubscriptionId)\" \
+                # Write array parameters to a temp JSON file to avoid shell escaping issues
+                ARRAY_PARAMS_FILE=$(mktemp)
+                cat > "$ARRAY_PARAMS_FILE" << EOF
+                {
+                  "actionGroupEmailReceivers": { "value": ${EMAIL_RECEIVERS} },
+                  "actionGroupSmsReceivers": { "value": ${SMS_RECEIVERS} }
+                }
+                EOF
+
+                az stack sub create \
+                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                  --subscription "$(monitoringSubscriptionId)" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
+                  --parameters @"$ARRAY_PARAMS_FILE" \
                   --deny-settings-mode ${{ parameters.denySettingsMode }} \
                   --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   --what-if \
-                  $PARAMS"
+                  $PARAMS
 
-                if [ -n "$EMAIL_RECEIVERS" ]; then
-                  CMD="$CMD --parameters actionGroupEmailReceivers=$EMAIL_RECEIVERS"
-                fi
-                if [ -n "$SMS_RECEIVERS" ]; then
-                  CMD="$CMD --parameters actionGroupSmsReceivers=$SMS_RECEIVERS"
-                fi
-
-                eval $CMD
+                rm -f "$ARRAY_PARAMS_FILE"
 
   - stage: Deploy
     displayName: "Deploy Monitoring Deployment Stack"
@@ -416,6 +422,7 @@ stages:
                       fi
 
                       # Convert comma-separated email list from variable group to JSON array for Bicep
+                      EMAIL_RECEIVERS="[]"
                       if [ -n "$(actionGroupEmails)" ]; then
                         EMAIL_RECEIVERS="["
                         IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
@@ -435,6 +442,7 @@ stages:
                       fi
 
                       # Convert comma-separated SMS list from variable group to JSON array for Bicep
+                      SMS_RECEIVERS="[]"
                       if [ -n "$(actionGroupSmsNumbers)" ]; then
                         SMS_RECEIVERS="["
                         IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
@@ -456,23 +464,25 @@ stages:
                         SMS_RECEIVERS+="]"
                       fi
 
-                      # Build the az stack command with proper array handling
-                      CMD="az stack sub create \
-                        --name \"stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}\" \
-                        --subscription \"$(monitoringSubscriptionId)\" \
+                      # Write array parameters to a temp JSON file to avoid shell escaping issues
+                      ARRAY_PARAMS_FILE=$(mktemp)
+                      cat > "$ARRAY_PARAMS_FILE" << EOF
+                      {
+                        "actionGroupEmailReceivers": { "value": ${EMAIL_RECEIVERS} },
+                        "actionGroupSmsReceivers": { "value": ${SMS_RECEIVERS} }
+                      }
+                      EOF
+
+                      az stack sub create \
+                        --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                        --subscription "$(monitoringSubscriptionId)" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
+                        --parameters @"$ARRAY_PARAMS_FILE" \
                         --deny-settings-mode ${{ parameters.denySettingsMode }} \
                         --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                         --yes \
-                        $PARAMS"
+                        $PARAMS
 
-                      if [ -n "$EMAIL_RECEIVERS" ]; then
-                        CMD="$CMD --parameters actionGroupEmailReceivers=$EMAIL_RECEIVERS"
-                      fi
-                      if [ -n "$SMS_RECEIVERS" ]; then
-                        CMD="$CMD --parameters actionGroupSmsReceivers=$SMS_RECEIVERS"
-                      fi
-
-                      eval $CMD
+                      rm -f "$ARRAY_PARAMS_FILE"
