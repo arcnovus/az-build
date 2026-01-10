@@ -32,18 +32,7 @@ parameters:
     displayName: "Workload Alias"
     type: string
     default: "devcenter"
-  - name: environment
-    displayName: "Environment"
-    type: string
-    default: "live"
-    values:
-      - nonprod
-      - dev
-      - test
-      - uat
-      - staging
-      - prod
-      - live
+  - template: templates/parameters/environment-param.yaml
   - name: locationCode
     displayName: "Location Code (e.g., cac for canada central)"
     type: string
@@ -76,60 +65,21 @@ parameters:
     type: string
     default: ""
   # Deployment Stack settings
-  - name: denySettingsMode
-    displayName: "Deny Settings Mode"
-    type: string
-    default: "denyWriteAndDelete"
-    values:
-      - none
-      - denyDelete
-      - denyWriteAndDelete
-  - name: actionOnUnmanage
-    displayName: "Action on Unmanaged Resources"
-    type: string
-    default: "detachAll"
-    values:
-      - deleteResources
-      - deleteAll
-      - detachAll
-  - name: deploymentStage
-    displayName: "Pipeline Stage to Run"
-    type: string
-    default: "WhatIf"
-    values:
-      - Validation
-      - WhatIf
-      - Deploy
+  - template: templates/parameters/deployment-stack-settings.yaml
 
 stages:
   - stage: Validate
     displayName: "Validate DevCenter Deployment Stack"
     # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
+      - template: templates/jobs/validate-environment-job.yaml
+        parameters:
+          environment: ${{ parameters.environment }}
       - job: ValidateStack
         displayName: "Validate Stack"
+        dependsOn: ValidateEnvironment
         steps:
           - checkout: self
-
-          - script: |
-              # Validate environment parameter against allowed environments
-              ALLOWED_ENVS="$(environments)"
-              ENV_PARAM="${{ parameters.environment }}"
-              
-              if [ -z "$ENV_PARAM" ]; then
-                echo "##[error]Environment parameter is required but was not provided."
-                echo "Allowed environments: ${ALLOWED_ENVS}"
-                exit 1
-              fi
-              
-              if [[ ",${ALLOWED_ENVS}," =~ ",${ENV_PARAM}," ]]; then
-                echo "✓ Valid environment: ${ENV_PARAM}"
-              else
-                echo "##[error]Invalid environment: ${ENV_PARAM}"
-                echo "Allowed environments: ${ALLOWED_ENVS}"
-                exit 1
-              fi
-            displayName: "Validate Environment Parameter"
 
           - task: AzureCLI@2
             displayName: "Validate DevCenter Deployment Stack"

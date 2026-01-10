@@ -1,0 +1,15 @@
+# Environment Parameter Template
+# Defines the standard environment values used across all pipelines
+parameters:
+  - name: environment
+    displayName: "Environment"
+    type: string
+    default: "live"
+    values:
+      - nonprod
+      - dev
+      - test
+      - uat
+      - staging
+      - prod
+      - live

@@ -45,34 +45,8 @@ variables:
     value: "governance-${{ parameters.environment }}-${{ parameters.locationCode }}-$(Build.BuildNumber)"
 
 parameters:
-  - name: managementGroupId
-    displayName: "Management Group ID (where policies will be assigned)"
-    type: string
-    default: "mg-platform"
-    values:
-      - $(azureTenantId)
-      - "mg-platform"
-      - "mg-landing-zone"
-      - "mg-sandbox"
-      - "mg-decommissioned"
-      - "mg-management"
-      - "mg-connectivity"
-      - "mg-corp-prod"
-      - "mg-corp-non-prod"
-      - "mg-online-prod"
-      - "mg-online-non-prod"
-  - name: environment
-    displayName: "Environment"
-    type: string
-    default: "live"
-    values:
-      - nonprod
-      - dev
-      - test
-      - uat
-      - staging
-      - prod
-      - live
+  - template: templates/parameters/management-group-param.yaml
+  - template: templates/parameters/environment-param.yaml
   - name: locationCode
     displayName: "Location Code (e.g., cac for canada central)"
     type: string
@@ -111,30 +85,14 @@ stages:
     displayName: "Validate Governance Deployment"
     # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
+      - template: templates/jobs/validate-environment-job.yaml
+        parameters:
+          environment: ${{ parameters.environment }}
       - job: ValidateDeployment
         displayName: "Validate Deployment"
+        dependsOn: ValidateEnvironment
         steps:
           - checkout: self
-
-          - script: |
-              # Validate environment parameter against allowed environments
-              ALLOWED_ENVS="$(environments)"
-              ENV_PARAM="${{ parameters.environment }}"
-
-              if [ -z "$ENV_PARAM" ]; then
-                echo "##[error]Environment parameter is required but was not provided."
-                echo "Allowed environments: ${ALLOWED_ENVS}"
-                exit 1
-              fi
-
-              if [[ ",${ALLOWED_ENVS}," =~ ",${ENV_PARAM}," ]]; then
-                echo "✓ Valid environment: ${ENV_PARAM}"
-              else
-                echo "##[error]Invalid environment: ${ENV_PARAM}"
-                echo "Allowed environments: ${ALLOWED_ENVS}"
-                exit 1
-              fi
-            displayName: "Validate Environment Parameter"
 
           - task: AzureCLI@2
             displayName: "Validate Governance Deployment"
