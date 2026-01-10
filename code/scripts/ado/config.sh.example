@@ -154,6 +154,46 @@ export MONITORING_SUBSCRIPTION_ID=""
 # Log Analytics workspace data retention in days (30-730)
 export DATA_RETENTION_DAYS="60"
 
+# Daily ingestion quota in GB (-1 for unlimited)
+# Controls cost by capping daily data ingestion. Set based on org capacity planning.
+export DAILY_QUOTA_GB="-1"
+
+# Alert email addresses (semicolon-separated)
+# Email addresses for operational alerts from the central monitoring workspace
+# Example: "platform-team@example.com;ops-team@example.com"
+export ALERT_EMAIL_ADDRESSES=""
+
+# Alert webhook URI (optional)
+# Webhook endpoint for integrating alerts with ITSM or monitoring systems
+# Leave empty if not using webhook integration
+export ALERT_WEBHOOK_URI=""
+
+# Enable alert rules (true/false)
+# Set to true to enable operational alerts for the monitoring workspace
+# For production monitoring, this should typically be true
+export ENABLE_ALERT_RULES="true"
+
+# Diagnostic storage account resource ID (optional)
+# Storage account for archival of workspace diagnostic logs (audit trail)
+# Example: "/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.Storage/storageAccounts/<name>"
+# Leave empty if diagnostic archival is not required
+export DIAGNOSTIC_STORAGE_ACCOUNT_ID=""
+
+# Public network access for ingestion (Enabled/Disabled)
+# Controls whether data can be ingested over public internet
+# Options: "Enabled" or "Disabled"
+export PUBLIC_NETWORK_ACCESS_FOR_INGESTION="Enabled"
+
+# Public network access for query (Enabled/Disabled)
+# Controls whether queries can be executed over public internet
+# Options: "Enabled" or "Disabled"
+export PUBLIC_NETWORK_ACCESS_FOR_QUERY="Enabled"
+
+# Enable log access using only resource permissions (true/false)
+# When true, uses resource-centric RBAC; when false, uses workspace-centric RBAC
+# See: https://learn.microsoft.com/en-us/azure/azure-monitor/logs/manage-access
+export ENABLE_LOG_ACCESS_USING_ONLY_RESOURCE_PERMISSIONS="false"
+
 # =============================================================================
 # Environment Configuration (for ADO environments and pipeline validation)
 # =============================================================================

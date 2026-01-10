@@ -28,6 +28,14 @@ GROUP_DESCRIPTION="Variables for monitoring infrastructure deployment pipeline"
 # Default values (can be overridden in config.sh)
 MONITORING_SUBSCRIPTION_ID="${MONITORING_SUBSCRIPTION_ID:-}"
 DATA_RETENTION_DAYS="${DATA_RETENTION_DAYS:-60}"
+DAILY_QUOTA_GB="${DAILY_QUOTA_GB:--1}"
+ALERT_EMAIL_ADDRESSES="${ALERT_EMAIL_ADDRESSES:-}"
+ALERT_WEBHOOK_URI="${ALERT_WEBHOOK_URI:-}"
+ENABLE_ALERT_RULES="${ENABLE_ALERT_RULES:-true}"
+DIAGNOSTIC_STORAGE_ACCOUNT_ID="${DIAGNOSTIC_STORAGE_ACCOUNT_ID:-}"
+PUBLIC_NETWORK_ACCESS_FOR_INGESTION="${PUBLIC_NETWORK_ACCESS_FOR_INGESTION:-Enabled}"
+PUBLIC_NETWORK_ACCESS_FOR_QUERY="${PUBLIC_NETWORK_ACCESS_FOR_QUERY:-Enabled}"
+ENABLE_LOG_ACCESS_USING_ONLY_RESOURCE_PERMISSIONS="${ENABLE_LOG_ACCESS_USING_ONLY_RESOURCE_PERMISSIONS:-false}"
 
 # =============================================================================
 # Functions
@@ -59,10 +67,18 @@ create_monitoring_variables_group() {
     
     # Update/Create all variables
     log_step "Setting variables..."
-    
+
     set_variable "$group_id" "monitoringSubscriptionId" "${MONITORING_SUBSCRIPTION_ID}"
     set_variable "$group_id" "dataRetention" "${DATA_RETENTION_DAYS}"
-    
+    set_variable "$group_id" "dailyQuotaGb" "${DAILY_QUOTA_GB}"
+    set_variable "$group_id" "alertEmailAddresses" "${ALERT_EMAIL_ADDRESSES}"
+    set_variable "$group_id" "alertWebhookUri" "${ALERT_WEBHOOK_URI}"
+    set_variable "$group_id" "enableAlertRules" "${ENABLE_ALERT_RULES}"
+    set_variable "$group_id" "diagnosticStorageAccountId" "${DIAGNOSTIC_STORAGE_ACCOUNT_ID}"
+    set_variable "$group_id" "publicNetworkAccessForIngestion" "${PUBLIC_NETWORK_ACCESS_FOR_INGESTION}"
+    set_variable "$group_id" "publicNetworkAccessForQuery" "${PUBLIC_NETWORK_ACCESS_FOR_QUERY}"
+    set_variable "$group_id" "enableLogAccessUsingOnlyResourcePermissions" "${ENABLE_LOG_ACCESS_USING_ONLY_RESOURCE_PERMISSIONS}"
+
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
     
@@ -77,6 +93,14 @@ create_monitoring_variables_group() {
         echo "  - monitoringSubscriptionId: ${MONITORING_SUBSCRIPTION_ID}"
     fi
     echo "  - dataRetention: ${DATA_RETENTION_DAYS}"
+    echo "  - dailyQuotaGb: ${DAILY_QUOTA_GB}"
+    echo "  - alertEmailAddresses: ${ALERT_EMAIL_ADDRESSES:-(empty)}"
+    echo "  - alertWebhookUri: ${ALERT_WEBHOOK_URI:-(empty)}"
+    echo "  - enableAlertRules: ${ENABLE_ALERT_RULES}"
+    echo "  - diagnosticStorageAccountId: ${DIAGNOSTIC_STORAGE_ACCOUNT_ID:-(empty)}"
+    echo "  - publicNetworkAccessForIngestion: ${PUBLIC_NETWORK_ACCESS_FOR_INGESTION}"
+    echo "  - publicNetworkAccessForQuery: ${PUBLIC_NETWORK_ACCESS_FOR_QUERY}"
+    echo "  - enableLogAccessUsingOnlyResourcePermissions: ${ENABLE_LOG_ACCESS_USING_ONLY_RESOURCE_PERMISSIONS}"
 }
 
 # Dry run - show what would be done
@@ -94,6 +118,14 @@ dry_run() {
         echo "  - monitoringSubscriptionId: ${MONITORING_SUBSCRIPTION_ID}"
     fi
     echo "  - dataRetention: ${DATA_RETENTION_DAYS}"
+    echo "  - dailyQuotaGb: ${DAILY_QUOTA_GB}"
+    echo "  - alertEmailAddresses: ${ALERT_EMAIL_ADDRESSES:-(empty)}"
+    echo "  - alertWebhookUri: ${ALERT_WEBHOOK_URI:-(empty)}"
+    echo "  - enableAlertRules: ${ENABLE_ALERT_RULES}"
+    echo "  - diagnosticStorageAccountId: ${DIAGNOSTIC_STORAGE_ACCOUNT_ID:-(empty)}"
+    echo "  - publicNetworkAccessForIngestion: ${PUBLIC_NETWORK_ACCESS_FOR_INGESTION}"
+    echo "  - publicNetworkAccessForQuery: ${PUBLIC_NETWORK_ACCESS_FOR_QUERY}"
+    echo "  - enableLogAccessUsingOnlyResourcePermissions: ${ENABLE_LOG_ACCESS_USING_ONLY_RESOURCE_PERMISSIONS}"
     echo ""
     
     log_info "Configuration:"

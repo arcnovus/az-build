@@ -10,6 +10,7 @@ pool:
 
 variables:
   - group: common-variables
+  - group: monitoring-variables
   - name: bicepPath
     value: "code/bicep/monitoring"
   - name: templateFile
@@ -23,7 +24,7 @@ parameters:
   - name: subscriptionId
     displayName: "Monitoring Subscription ID"
     type: string
-    default: ""
+    default: "$(monitoringSubscriptionId)"
   - name: workloadAlias
     displayName: "Workload Alias"
     type: string
@@ -55,7 +56,7 @@ parameters:
   - name: dataRetention
     displayName: "Data Retention (days)"
     type: number
-    default: 60
+    default: $(dataRetention)
   - name: owner
     displayName: "Owner (e.g. a group mailbox like platform-team@example.com)"
     type: string
@@ -66,23 +67,41 @@ parameters:
   - name: dailyQuotaGb
     displayName: "Daily Ingestion Quota in GB (-1 for unlimited)"
     type: number
-    default: -1
+    default: $(dailyQuotaGb)
   - name: alertEmailAddresses
     displayName: "Alert Email Addresses (semicolon separated, leave empty to disable alerts)"
     type: string
-    default: ""
+    default: "$(alertEmailAddresses)"
   - name: alertWebhookUri
     displayName: "Alert Webhook URI (optional)"
     type: string
-    default: ""
+    default: "$(alertWebhookUri)"
   - name: enableAlertRules
     displayName: "Enable Alert Rules"
     type: boolean
-    default: true
+    default: $(enableAlertRules)
   - name: diagnosticStorageAccountId
     displayName: "Storage Account Resource ID for Workspace Diagnostics (optional)"
     type: string
-    default: ""
+    default: "$(diagnosticStorageAccountId)"
+  - name: publicNetworkAccessForIngestion
+    displayName: "Public Network Access for Ingestion"
+    type: string
+    default: "$(publicNetworkAccessForIngestion)"
+    values:
+      - Enabled
+      - Disabled
+  - name: publicNetworkAccessForQuery
+    displayName: "Public Network Access for Query"
+    type: string
+    default: "$(publicNetworkAccessForQuery)"
+    values:
+      - Enabled
+      - Disabled
+  - name: enableLogAccessUsingOnlyResourcePermissions
+    displayName: "Enable Log Access Using Only Resource Permissions"
+    type: boolean
+    default: $(enableLogAccessUsingOnlyResourcePermissions)
   - name: denySettingsMode
     displayName: "Deny Settings Mode"
     type: string
@@ -187,6 +206,17 @@ stages:
                 if [ -n "${{ parameters.diagnosticStorageAccountId }}" ]; then
                   PARAMS="$PARAMS --parameters diagnosticStorageAccountId='${{ parameters.diagnosticStorageAccountId }}'"
                 fi
+                if [ -n "${{ parameters.publicNetworkAccessForIngestion }}" ]; then
+                  PARAMS="$PARAMS --parameters publicNetworkAccessForIngestion='${{ parameters.publicNetworkAccessForIngestion }}'"
+                fi
+                if [ -n "${{ parameters.publicNetworkAccessForQuery }}" ]; then
+                  PARAMS="$PARAMS --parameters publicNetworkAccessForQuery='${{ parameters.publicNetworkAccessForQuery }}'"
+                fi
+                if [ "${{ parameters.enableLogAccessUsingOnlyResourcePermissions }}" == "true" ] || [ "${{ parameters.enableLogAccessUsingOnlyResourcePermissions }}" == "True" ]; then
+                  PARAMS="$PARAMS --parameters enableLogAccessUsingOnlyResourcePermissions=true"
+                else
+                  PARAMS="$PARAMS --parameters enableLogAccessUsingOnlyResourcePermissions=false"
+                fi
 
                 az stack sub validate \
                   --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
@@ -262,6 +292,17 @@ stages:
                 fi
                 if [ -n "${{ parameters.diagnosticStorageAccountId }}" ]; then
                   PARAMS="$PARAMS --parameters diagnosticStorageAccountId='${{ parameters.diagnosticStorageAccountId }}'"
+                fi
+                if [ -n "${{ parameters.publicNetworkAccessForIngestion }}" ]; then
+                  PARAMS="$PARAMS --parameters publicNetworkAccessForIngestion='${{ parameters.publicNetworkAccessForIngestion }}'"
+                fi
+                if [ -n "${{ parameters.publicNetworkAccessForQuery }}" ]; then
+                  PARAMS="$PARAMS --parameters publicNetworkAccessForQuery='${{ parameters.publicNetworkAccessForQuery }}'"
+                fi
+                if [ "${{ parameters.enableLogAccessUsingOnlyResourcePermissions }}" == "true" ] || [ "${{ parameters.enableLogAccessUsingOnlyResourcePermissions }}" == "True" ]; then
+                  PARAMS="$PARAMS --parameters enableLogAccessUsingOnlyResourcePermissions=true"
+                else
+                  PARAMS="$PARAMS --parameters enableLogAccessUsingOnlyResourcePermissions=false"
                 fi
 
                 az stack sub create \
@@ -345,6 +386,17 @@ stages:
                       fi
                       if [ -n "${{ parameters.diagnosticStorageAccountId }}" ]; then
                         PARAMS="$PARAMS --parameters diagnosticStorageAccountId='${{ parameters.diagnosticStorageAccountId }}'"
+                      fi
+                      if [ -n "${{ parameters.publicNetworkAccessForIngestion }}" ]; then
+                        PARAMS="$PARAMS --parameters publicNetworkAccessForIngestion='${{ parameters.publicNetworkAccessForIngestion }}'"
+                      fi
+                      if [ -n "${{ parameters.publicNetworkAccessForQuery }}" ]; then
+                        PARAMS="$PARAMS --parameters publicNetworkAccessForQuery='${{ parameters.publicNetworkAccessForQuery }}'"
+                      fi
+                      if [ "${{ parameters.enableLogAccessUsingOnlyResourcePermissions }}" == "true" ] || [ "${{ parameters.enableLogAccessUsingOnlyResourcePermissions }}" == "True" ]; then
+                        PARAMS="$PARAMS --parameters enableLogAccessUsingOnlyResourcePermissions=true"
+                      else
+                        PARAMS="$PARAMS --parameters enableLogAccessUsingOnlyResourcePermissions=false"
                       fi
 
                       az stack sub create \
