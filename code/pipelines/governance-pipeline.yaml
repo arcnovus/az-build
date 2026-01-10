@@ -97,22 +97,6 @@ parameters:
     displayName: "Enable Canada Federal PBMM"
     type: boolean
     default: true
-  - name: denySettingsMode
-    displayName: "Deny Settings Mode"
-    type: string
-    default: "denyWriteAndDelete"
-    values:
-      - none
-      - denyDelete
-      - denyWriteAndDelete
-  - name: actionOnUnmanage
-    displayName: "Action on Unmanaged Resources"
-    type: string
-    default: "detachAll"
-    values:
-      - deleteResources
-      - deleteAll
-      - detachAll
   - name: deploymentStage
     displayName: "Pipeline Stage to Run"
     type: string
@@ -181,8 +165,6 @@ stages:
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
-                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   $PARAMS
 
   - stage: WhatIf
@@ -230,8 +212,6 @@ stages:
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
-                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   --what-if \
                   $PARAMS
 
@@ -286,7 +266,5 @@ stages:
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
-                        --deny-settings-mode ${{ parameters.denySettingsMode }} \
-                        --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                         --yes \
                         $PARAMS
