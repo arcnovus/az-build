@@ -145,23 +145,26 @@ stages:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
+              failOnStandardError: true
               inlineScript: |
+                set -e  # Exit on any error
                 # Build parameter overrides for pipeline parameters
+                # Note: Don't use quotes around values - they become part of the value
                 PARAMS=""
                 if [ -n "${{ parameters.workloadAlias }}" ]; then
-                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
+                  PARAMS="$PARAMS --parameters workloadAlias=${{ parameters.workloadAlias }}"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                  PARAMS="$PARAMS --parameters environment=${{ parameters.environment }}"
                 fi
                 if [ -n "${{ parameters.locationCode }}" ]; then
-                  PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
+                  PARAMS="$PARAMS --parameters locationCode=${{ parameters.locationCode }}"
                 fi
                 if [ -n "${{ parameters.instanceNumber }}" ]; then
-                  PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
+                  PARAMS="$PARAMS --parameters instanceNumber=${{ parameters.instanceNumber }}"
                 fi
                 if [ -n "${{ parameters.location }}" ]; then
-                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                  PARAMS="$PARAMS --parameters location=${{ parameters.location }}"
                 fi
                 if [ -n "${{ parameters.dataRetention }}" ]; then
                   PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
@@ -170,10 +173,10 @@ stages:
                   PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
                 fi
                 if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                  PARAMS="$PARAMS --parameters owner=${{ parameters.owner }}"
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                  PARAMS="$PARAMS --parameters managedBy=${{ parameters.managedBy }}"
                 fi
 
                 # Convert comma-separated email list from variable group to JSON array for Bicep
@@ -264,23 +267,26 @@ stages:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
+              failOnStandardError: true
               inlineScript: |
+                set -e  # Exit on any error
                 # Build parameter overrides for pipeline parameters
+                # Note: Don't use quotes around values - they become part of the value
                 PARAMS=""
                 if [ -n "${{ parameters.workloadAlias }}" ]; then
-                  PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
+                  PARAMS="$PARAMS --parameters workloadAlias=${{ parameters.workloadAlias }}"
                 fi
                 if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                  PARAMS="$PARAMS --parameters environment=${{ parameters.environment }}"
                 fi
                 if [ -n "${{ parameters.locationCode }}" ]; then
-                  PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
+                  PARAMS="$PARAMS --parameters locationCode=${{ parameters.locationCode }}"
                 fi
                 if [ -n "${{ parameters.instanceNumber }}" ]; then
-                  PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
+                  PARAMS="$PARAMS --parameters instanceNumber=${{ parameters.instanceNumber }}"
                 fi
                 if [ -n "${{ parameters.location }}" ]; then
-                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                  PARAMS="$PARAMS --parameters location=${{ parameters.location }}"
                 fi
                 if [ -n "${{ parameters.dataRetention }}" ]; then
                   PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
@@ -289,10 +295,10 @@ stages:
                   PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
                 fi
                 if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                  PARAMS="$PARAMS --parameters owner=${{ parameters.owner }}"
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                  PARAMS="$PARAMS --parameters managedBy=${{ parameters.managedBy }}"
                 fi
 
                 # Convert comma-separated email list from variable group to JSON array for Bicep
@@ -386,23 +392,26 @@ stages:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
+                    failOnStandardError: true
                     inlineScript: |
+                      set -e  # Exit on any error
                       # Build parameter overrides for pipeline parameters
+                      # Note: Don't use quotes around values - they become part of the value
                       PARAMS=""
                       if [ -n "${{ parameters.workloadAlias }}" ]; then
-                        PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
+                        PARAMS="$PARAMS --parameters workloadAlias=${{ parameters.workloadAlias }}"
                       fi
                       if [ -n "${{ parameters.environment }}" ]; then
-                        PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
+                        PARAMS="$PARAMS --parameters environment=${{ parameters.environment }}"
                       fi
                       if [ -n "${{ parameters.locationCode }}" ]; then
-                        PARAMS="$PARAMS --parameters locationCode='${{ parameters.locationCode }}'"
+                        PARAMS="$PARAMS --parameters locationCode=${{ parameters.locationCode }}"
                       fi
                       if [ -n "${{ parameters.instanceNumber }}" ]; then
-                        PARAMS="$PARAMS --parameters instanceNumber='${{ parameters.instanceNumber }}'"
+                        PARAMS="$PARAMS --parameters instanceNumber=${{ parameters.instanceNumber }}"
                       fi
                       if [ -n "${{ parameters.location }}" ]; then
-                        PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
+                        PARAMS="$PARAMS --parameters location=${{ parameters.location }}"
                       fi
                       if [ -n "${{ parameters.dataRetention }}" ]; then
                         PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
@@ -411,10 +420,10 @@ stages:
                         PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
                       fi
                       if [ -n "${{ parameters.owner }}" ]; then
-                        PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
+                        PARAMS="$PARAMS --parameters owner=${{ parameters.owner }}"
                       fi
                       if [ -n "${{ parameters.managedBy }}" ]; then
-                        PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                        PARAMS="$PARAMS --parameters managedBy=${{ parameters.managedBy }}"
                       fi
 
                       # Convert comma-separated email list from variable group to JSON array for Bicep
