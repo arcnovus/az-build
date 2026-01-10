@@ -26,10 +26,9 @@ GROUP_NAME="governance-variables"
 GROUP_DESCRIPTION="Variables for governance compliance policies deployment pipeline"
 
 # Default values (can be overridden in config.sh)
-# Enable Microsoft Cloud Security Benchmark by default
-DEFAULT_ENABLE_MCSB="${DEFAULT_ENABLE_MCSB:-true}"
-# Enable Canada Federal PBMM by default
-DEFAULT_ENABLE_CANADA_PBMM="${DEFAULT_ENABLE_CANADA_PBMM:-true}"
+# Currently no governance-specific variables are required.
+# The pipeline uses parameters for enableMCSB and enableCanadaPBMM.
+# This variable group is kept for future extensibility.
 
 # =============================================================================
 # Functions
@@ -62,8 +61,9 @@ create_governance_variables_group() {
     # Update/Create all variables
     log_step "Setting variables..."
     
-    set_variable "$group_id" "enableMCSB" "${DEFAULT_ENABLE_MCSB}"
-    set_variable "$group_id" "enableCanadaPBMM" "${DEFAULT_ENABLE_CANADA_PBMM}"
+    # Currently no governance-specific variables are required.
+    # The pipeline uses parameters for enableMCSB and enableCanadaPBMM.
+    # Add variables here in the future if governance-specific configuration is needed.
     
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
@@ -73,8 +73,7 @@ create_governance_variables_group() {
     # Display the variables
     echo ""
     log_info "Variables in '${GROUP_NAME}':"
-    echo "  - enableMCSB: ${DEFAULT_ENABLE_MCSB}"
-    echo "  - enableCanadaPBMM: ${DEFAULT_ENABLE_CANADA_PBMM}"
+    echo "  (No variables currently defined - using pipeline parameters instead)"
 }
 
 # Dry run - show what would be done
@@ -86,8 +85,7 @@ dry_run() {
     log_info "Would create/update variable group: ${GROUP_NAME}"
     echo ""
     log_info "Variables that would be set:"
-    echo "  - enableMCSB: ${DEFAULT_ENABLE_MCSB}"
-    echo "  - enableCanadaPBMM: ${DEFAULT_ENABLE_CANADA_PBMM}"
+    echo "  (No variables currently defined - using pipeline parameters instead)"
     echo ""
     
     log_info "Configuration:"

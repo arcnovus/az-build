@@ -1,5 +1,5 @@
-# Azure Pipeline to deploy Governance Compliance Policies using Deployment Stacks
-# This pipeline deploys the governance Bicep template as a Deployment Stack at management group scope
+# Azure Pipeline to deploy Governance Compliance Policies
+# This pipeline deploys the governance Bicep template at management group scope
 # Assigns Microsoft Cloud Security Benchmark and Canada Federal PBMM policies in audit mode
 #
 # =============================================================================
@@ -41,8 +41,8 @@ variables:
     value: "$(bicepPath)/governance.bicep"
   - name: parametersFile
     value: "$(bicepPath)/governance.bicepparam"
-  - name: stackName
-    value: "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}"
+  - name: deploymentName
+    value: "governance-${{ parameters.environment }}-${{ parameters.locationCode }}-$(Build.BuildNumber)"
 
 parameters:
   - name: managementGroupId
@@ -108,11 +108,11 @@ parameters:
 
 stages:
   - stage: Validate
-    displayName: "Validate Deployment Stack"
+    displayName: "Validate Governance Deployment"
     # Runs for: Validation, WhatIf, Deploy (all options)
     jobs:
-      - job: ValidateStack
-        displayName: "Validate Stack"
+      - job: ValidateDeployment
+        displayName: "Validate Deployment"
         steps:
           - checkout: self
 
@@ -137,7 +137,7 @@ stages:
             displayName: "Validate Environment Parameter"
 
           - task: AzureCLI@2
-            displayName: "Validate Governance Deployment Stack"
+            displayName: "Validate Governance Deployment"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
@@ -159,8 +159,7 @@ stages:
                 PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
                 PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
 
-                az stack mg validate \
-                  --name "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}" \
+                az deployment mg validate \
                   --management-group-id "${{ parameters.managementGroupId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
@@ -184,7 +183,7 @@ stages:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "What-If Governance Deployment Stack"
+            displayName: "What-If Governance Deployment"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
@@ -206,17 +205,15 @@ stages:
                 PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
                 PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
 
-                az stack mg create \
-                  --name "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}" \
+                az deployment mg what-if \
                   --management-group-id "${{ parameters.managementGroupId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --what-if \
                   $PARAMS
 
   - stage: Deploy
-    displayName: "Deploy Governance Deployment Stack"
+    displayName: "Deploy Governance Policies"
     dependsOn:
       - Validate
       - WhatIf
@@ -228,8 +225,8 @@ stages:
         eq('${{ parameters.deploymentStage }}', 'Deploy')
       )
     jobs:
-      - deployment: DeployGovernanceStack
-        displayName: "Deploy Governance Stack"
+      - deployment: DeployGovernance
+        displayName: "Deploy Governance Policies"
         environment: "${{ parameters.environment }}"
         strategy:
           runOnce:
@@ -238,7 +235,7 @@ stages:
                 - checkout: self
 
                 - task: AzureCLI@2
-                  displayName: "Deploy Governance Deployment Stack"
+                  displayName: "Deploy Governance Policies"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
@@ -260,11 +257,10 @@ stages:
                       PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
                       PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
 
-                      az stack mg create \
-                        --name "stack-governance-${{ parameters.environment }}-${{ parameters.locationCode }}" \
+                      az deployment mg create \
+                        --name "$(deploymentName)" \
                         --management-group-id "${{ parameters.managementGroupId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
-                        --yes \
                         $PARAMS
