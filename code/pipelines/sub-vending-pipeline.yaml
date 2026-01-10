@@ -131,6 +131,7 @@ stages:
     jobs:
       - job: ValidateBicep
         displayName: "Validate Bicep"
+        timeoutInMinutes: 25
         steps:
           - checkout: self
 
@@ -219,6 +220,7 @@ stages:
     jobs:
       - job: WhatIfAnalysis
         displayName: "What-If"
+        timeoutInMinutes: 25
         steps:
           - checkout: self
 
@@ -290,6 +292,7 @@ stages:
     jobs:
       - deployment: DeploySubscriptionVending
         displayName: "Deploy Subscription Vending"
+        timeoutInMinutes: 25
         environment: "${{ parameters.environment }}"
         strategy:
           runOnce:
