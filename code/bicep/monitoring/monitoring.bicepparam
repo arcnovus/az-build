@@ -34,7 +34,9 @@ param location = 'canadacentral'
 param dataRetention = 60
 
 // SKU: PerGB2018 (Pay-As-You-Go) or CapacityReservation
-// Free tier is deprecated and excluded
+// PerGB2018 SKU provides 5 GB/day of free data ingestion (shared across all PerGB2018 workspaces in the same billing account), 
+// unlimited data retention (billed per GB after the free allowance).
+// For official details see: https://docs.microsoft.com/azure/azure-monitor/logs/storage-ingestion#ingestion-costs
 param workspaceSku = 'PerGB2018'
 
 // Capacity reservation level in GB/day (only used when workspaceSku is CapacityReservation)
@@ -99,6 +101,6 @@ param alertWindowSize = 'PT15M'
 // OWNERSHIP AND MANAGEMENT
 // ============================================================================
 
-param owner = 'platform-team'
+param owner = 'platform-team@arcnovus.net'
 
 param managedBy = 'Bicep'

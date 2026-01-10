@@ -147,12 +147,28 @@ export ORG_DISPLAY_NAME=""
 # =============================================================================
 # Monitoring Configuration (for monitoring-variables group)
 # =============================================================================
-# Monitoring subscription ID (set after subscription is created via sub-vending)
-# Leave empty during initial setup; update after monitoring subscription exists
+# Note: Only STRING values go in variable groups. Stable configuration
+# (SKU, thresholds, security settings) is defined in bicepparam files.
+
+# Monitoring subscription ID - the subscription where monitoring resources are deployed
+# Set this after creating the monitoring subscription via subscription vending
 export MONITORING_SUBSCRIPTION_ID=""
 
-# Log Analytics workspace data retention in days (30-730)
-export DATA_RETENTION_DAYS="60"
+# Action Group notification recipients
+# Comma-separated email addresses for alert notifications
+# Example: "platform-team@example.com,oncall@example.com"
+export ACTION_GROUP_EMAILS=""
+
+# Comma-separated SMS numbers for alert notifications (optional)
+# Format: "countryCode:phoneNumber" (e.g., "1:5551234567,1:5559876543")
+# Leave empty if SMS notifications are not needed
+export ACTION_GROUP_SMS_NUMBERS=""
+
+# Note: The following configurations have been moved to bicepparam files:
+# - Data retention (dataRetention in monitoring.bicepparam)
+# - Workspace SKU (workspaceSku in monitoring.bicepparam)
+# - Alert thresholds (dataIngestionThresholdGb, etc. in monitoring.bicepparam)
+# - Security settings (publicNetworkAccess in monitoring.bicepparam)
 
 # =============================================================================
 # Environment Configuration (for ADO environments and pipeline validation)

@@ -4,7 +4,7 @@
 #
 # Parameter Placement Strategy:
 # - Stable configuration (SKU, thresholds, security settings) is in bicepparam files
-# - String values that need organization-wide updates (emails, SMS) are in monitoring-variables
+# - String values that need organization-wide updates (subscription ID, emails, SMS) are in monitoring-variables
 # - Values that change per run (environment, location) are pipeline parameters
 #
 # Security Note:
@@ -34,10 +34,6 @@ parameters:
   # ============================================================================
   # CORE NAMING PARAMETERS (vary per deployment)
   # ============================================================================
-  - name: subscriptionId
-    displayName: "Monitoring Subscription ID"
-    type: string
-    default: ""
   - name: workloadAlias
     displayName: "Workload Alias"
     type: string
@@ -82,13 +78,14 @@ parameters:
   # ============================================================================
   # OWNERSHIP PARAMETERS
   # ============================================================================
-  - name: owner
-    displayName: "Owner (e.g. a group mailbox like platform-team@example.com)"
-    type: string
   - name: managedBy
     displayName: "Managed By"
     type: string
-    default: "Bicep"
+    default: "$(managedBy)"
+  - name: owner
+    displayName: "Owner (e.g. a group mailbox like platform-team@organization.com)"
+    type: string
+    default: "$(defaultOwner)"
 
   # ============================================================================
   # DEPLOYMENT STACK SETTINGS
@@ -147,6 +144,16 @@ stages:
                 exit 1
               fi
             displayName: "Validate Environment Parameter"
+
+          - script: |
+              # Validate that monitoringSubscriptionId is set in the variable group
+              if [ -z "$(monitoringSubscriptionId)" ]; then
+                echo "##[error]monitoringSubscriptionId is not set in the monitoring-variables variable group."
+                echo "Please set the subscription ID in the variable group before running this pipeline."
+                exit 1
+              fi
+              echo "✓ Monitoring subscription ID: $(monitoringSubscriptionId)"
+            displayName: "Validate Subscription ID"
 
           - task: AzureCLI@2
             displayName: "Validate Monitoring Deployment Stack"
@@ -232,7 +239,7 @@ stages:
 
                 az stack sub validate \
                   --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
-                  --subscription "${{ parameters.subscriptionId }}" \
+                  --subscription "$(monitoringSubscriptionId)" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
@@ -338,7 +345,7 @@ stages:
 
                 az stack sub create \
                   --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
-                  --subscription "${{ parameters.subscriptionId }}" \
+                  --subscription "$(monitoringSubscriptionId)" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
@@ -451,7 +458,7 @@ stages:
 
                       az stack sub create \
                         --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
-                        --subscription "${{ parameters.subscriptionId }}" \
+                        --subscription "$(monitoringSubscriptionId)" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \

@@ -28,9 +28,10 @@ export AZURE_DEVOPS_EXT_PAT="${ADO_PAT_TOKEN}"
 # =============================================================================
 
 GROUP_NAME="monitoring-variables"
-GROUP_DESCRIPTION="Variables for monitoring infrastructure deployment pipeline. Contains string values only (emails, SMS numbers). Stable configuration is in bicepparam files."
+GROUP_DESCRIPTION="Variables for monitoring infrastructure deployment pipeline. Contains string values only (subscription ID, emails, SMS numbers). Stable configuration is in bicepparam files."
 
 # Default values (can be overridden in config.sh)
+# Subscription ID for monitoring resources
 MONITORING_SUBSCRIPTION_ID="${MONITORING_SUBSCRIPTION_ID:-}"
 
 # Action Group notification recipients
@@ -80,8 +81,9 @@ create_monitoring_variables_group() {
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
     
-    # Remove deprecated variables if they exist (now in bicepparam)
+    # Remove deprecated variables if they exist (now in bicepparam or replaced)
     delete_variable "$group_id" "dataRetention" 2>/dev/null || true
+    delete_variable "$group_id" "monitoringSubscriptionAlias" 2>/dev/null || true
     
     log_success "Variable group '${GROUP_NAME}' configured successfully"
     
