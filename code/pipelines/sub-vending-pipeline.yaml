@@ -170,6 +170,62 @@ stages:
                   "${{ parameters.instanceNumber }}"
 
           - task: AzureCLI@2
+            displayName: "Validate Permissions for Subscription Creation"
+            inputs:
+              azureSubscription: "$(azureServiceConnection)"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                # Get existing subscription ID from lookup step
+                EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
+
+                # Only validate permissions when creating new subscriptions
+                if [ -z "$EXISTING_SUB_ID" ]; then
+                  echo "Validating permissions for new subscription creation..."
+                  
+                  # Get current service principal object ID
+                  SP_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || az account show --query user.name -o tsv)
+                  if [ -z "$SP_OBJECT_ID" ]; then
+                    echo "##[warning]Could not determine service principal identity. Skipping permission validation."
+                    exit 0
+                  fi
+                  
+                  # Get tenant root management group
+                  TENANT_ROOT_MG=$(az account management-group list \
+                    --query "[?displayName=='Tenant Root Group'].name" -o tsv 2>/dev/null || echo "")
+                  
+                  if [ -z "$TENANT_ROOT_MG" ]; then
+                    echo "##[warning]Could not determine tenant root management group. Skipping permission validation."
+                    exit 0
+                  fi
+                  
+                  # Check for Owner role at Tenant Root MG
+                  echo "Checking for Owner role at Tenant Root MG..."
+                  HAS_OWNER=$(az role assignment list \
+                    --assignee "$SP_OBJECT_ID" \
+                    --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG" \
+                    --query "[?roleDefinitionName=='Owner']" -o tsv 2>/dev/null || echo "")
+                  
+                  if [ -z "$HAS_OWNER" ]; then
+                    echo "##[error]Missing required permission: Owner role at Tenant Root Management Group"
+                    echo "Service principal needs Owner role at: /providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+                    echo "Assign with: az role assignment create --assignee <sp-object-id> --role Owner --scope \"/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG\""
+                    exit 1
+                  fi
+                  echo "✓ Owner role at Tenant Root MG: OK"
+                  
+                  # Note: Billing permissions cannot be easily validated via CLI
+                  # They must be assigned via Azure Portal and are required for subscription creation
+                  echo "##[warning]Billing permissions cannot be validated via CLI."
+                  echo "Ensure service principal has billing permissions assigned via Azure Portal:"
+                  echo "  - For MCA: Invoice Section Contributor"
+                  echo "  - For EA: Enrollment Account Administrator"
+                  echo "Missing billing permissions will cause deployment to hang or fail."
+                else
+                  echo "Existing subscription detected - skipping permission validation."
+                fi
+
+          - task: AzureCLI@2
             displayName: "Validate Subscription Vending Deployment"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
@@ -315,6 +371,62 @@ stages:
                         "${{ parameters.instanceNumber }}"
 
                 - task: AzureCLI@2
+                  displayName: "Validate Permissions for Subscription Creation"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      # Get existing subscription ID from lookup step
+                      EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
+
+                      # Only validate permissions when creating new subscriptions
+                      if [ -z "$EXISTING_SUB_ID" ]; then
+                        echo "Validating permissions for new subscription creation..."
+                        
+                        # Get current service principal object ID
+                        SP_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || az account show --query user.name -o tsv)
+                        if [ -z "$SP_OBJECT_ID" ]; then
+                          echo "##[warning]Could not determine service principal identity. Skipping permission validation."
+                          exit 0
+                        fi
+                        
+                        # Get tenant root management group
+                        TENANT_ROOT_MG=$(az account management-group list \
+                          --query "[?displayName=='Tenant Root Group'].name" -o tsv 2>/dev/null || echo "")
+                        
+                        if [ -z "$TENANT_ROOT_MG" ]; then
+                          echo "##[warning]Could not determine tenant root management group. Skipping permission validation."
+                          exit 0
+                        fi
+                        
+                        # Check for Owner role at Tenant Root MG
+                        echo "Checking for Owner role at Tenant Root MG..."
+                        HAS_OWNER=$(az role assignment list \
+                          --assignee "$SP_OBJECT_ID" \
+                          --scope "/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG" \
+                          --query "[?roleDefinitionName=='Owner']" -o tsv 2>/dev/null || echo "")
+                        
+                        if [ -z "$HAS_OWNER" ]; then
+                          echo "##[error]Missing required permission: Owner role at Tenant Root Management Group"
+                          echo "Service principal needs Owner role at: /providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG"
+                          echo "Assign with: az role assignment create --assignee <sp-object-id> --role Owner --scope \"/providers/Microsoft.Management/managementGroups/$TENANT_ROOT_MG\""
+                          exit 1
+                        fi
+                        echo "✓ Owner role at Tenant Root MG: OK"
+                        
+                        # Note: Billing permissions cannot be easily validated via CLI
+                        # They must be assigned via Azure Portal and are required for subscription creation
+                        echo "##[warning]Billing permissions cannot be validated via CLI."
+                        echo "Ensure service principal has billing permissions assigned via Azure Portal:"
+                        echo "  - For MCA: Invoice Section Contributor"
+                        echo "  - For EA: Enrollment Account Administrator"
+                        echo "Missing billing permissions will cause deployment to hang or fail."
+                      else
+                        echo "Existing subscription detected - skipping permission validation."
+                      fi
+
+                - task: AzureCLI@2
                   displayName: "Deploy Subscription Vending"
                   inputs:
                     azureSubscription: "$(azureServiceConnection)"
@@ -336,11 +448,26 @@ stages:
                       # Get existing subscription ID from lookup step (may be empty)
                       EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
 
+                      # Validate billing scope is provided for new subscription creation
+                      if [ -z "$EXISTING_SUB_ID" ] && [ -z "$BILLING_SCOPE" ]; then
+                        echo "##[error]billingScope is required for new subscription creation but was not provided."
+                        echo "Please ensure billing variables are set in the variable group:"
+                        echo "  - billingAccountId (required)"
+                        echo "  - For MCA: invoiceSectionId and billingProfileId"
+                        echo "  - For EA: enrollmentAccountId"
+                        exit 1
+                      fi
+
                       # Deployment name for tracking
                       DEPLOYMENT_NAME="sub-vending-$(Build.BuildNumber)"
 
                       echo "Starting subscription vending deployment: ${DEPLOYMENT_NAME}"
-                      echo "Note: Subscription creation is asynchronous and may take 30-90 minutes to complete."
+                      if [ -z "$EXISTING_SUB_ID" ]; then
+                        echo "Creating NEW subscription with billing scope: ${BILLING_SCOPE}"
+                        echo "Note: Subscription creation is asynchronous and may take 30-90 minutes to complete."
+                      else
+                        echo "Moving existing subscription to management group."
+                      fi
 
                       # Start deployment with --no-wait to avoid blocking on subscription provisioning
                       az deployment tenant create \
@@ -371,11 +498,32 @@ stages:
                       # Poll deployment status until it completes or times out
                       # Subscription provisioning can take 30-90 minutes
                       MAX_WAIT_SECONDS=5400  # 90 minutes
-                      POLL_INTERVAL=60       # Check every 60 seconds
+                      BASE_POLL_INTERVAL=60  # Base check interval: 60 seconds
                       HEARTBEAT_INTERVAL=300 # Log heartbeat every 5 minutes
                       ELAPSED=0
                       LAST_STATUS=""
                       LAST_HEARTBEAT=0
+                      POLL_INTERVAL=$BASE_POLL_INTERVAL
+                      RATE_LIMIT_DETECTED=false
+                      RATE_LIMIT_COUNT=0
+                      MAX_RATE_LIMIT_BACKOFF=600  # Maximum backoff: 10 minutes
+
+                      # Function to check for rate limiting (HTTP 429) in deployment operations
+                      check_rate_limiting() {
+                        local deployment_name=$1
+                        # Query deployment operations and filter for 429 status codes using jq
+                        local operations=$(az rest --method GET \
+                          --url "https://management.azure.com/providers/Microsoft.Resources/deployments/${deployment_name}/operations?api-version=2022-09-01" \
+                          --output json 2>/dev/null | jq '[.value[]? | select(.properties.statusCode == 429)]' 2>/dev/null || echo "[]")
+                        
+                        if [ "$operations" != "[]" ] && [ -n "$operations" ]; then
+                          local count=$(echo "$operations" | jq 'length' 2>/dev/null || echo "0")
+                          if [ "$count" -gt 0 ]; then
+                            return 0  # Rate limiting detected
+                          fi
+                        fi
+                        return 1  # No rate limiting
+                      }
 
                       while [ $ELAPSED -lt $MAX_WAIT_SECONDS ]; do
                         # Get current deployment status
@@ -384,21 +532,65 @@ stages:
                           --query "properties.provisioningState" \
                           --output tsv 2>/dev/null || echo "Unknown")
 
+                        # Check for rate limiting in deployment operations
+                        if check_rate_limiting "${DEPLOYMENT_NAME}"; then
+                          if [ "$RATE_LIMIT_DETECTED" = false ]; then
+                            echo "##[warning]Rate limiting (HTTP 429) detected in deployment operations"
+                            echo "Azure is throttling requests. This is normal for subscription creation."
+                            echo "Implementing exponential backoff to reduce request frequency..."
+                            RATE_LIMIT_DETECTED=true
+                          fi
+                          
+                          RATE_LIMIT_COUNT=$((RATE_LIMIT_COUNT + 1))
+                          # Exponential backoff: 60s, 120s, 240s, 480s, max 600s (10 minutes)
+                          NEW_INTERVAL=$((BASE_POLL_INTERVAL * (2 ** (RATE_LIMIT_COUNT - 1))))
+                          if [ $NEW_INTERVAL -gt $MAX_RATE_LIMIT_BACKOFF ]; then
+                            NEW_INTERVAL=$MAX_RATE_LIMIT_BACKOFF
+                          fi
+                          
+                          if [ $NEW_INTERVAL -gt $POLL_INTERVAL ]; then
+                            POLL_INTERVAL=$NEW_INTERVAL
+                            MINUTES=$((POLL_INTERVAL / 60))
+                            echo "##[warning]Rate limiting persists. Increasing poll interval to ${MINUTES} minutes"
+                            echo "This helps avoid further throttling. Deployment will continue automatically."
+                          fi
+                        else
+                          # No rate limiting detected - reset if we were backing off
+                          if [ "$RATE_LIMIT_DETECTED" = true ]; then
+                            echo "##[info]Rate limiting cleared. Resetting to normal poll interval"
+                            RATE_LIMIT_DETECTED=false
+                            RATE_LIMIT_COUNT=0
+                            POLL_INTERVAL=$BASE_POLL_INTERVAL
+                          fi
+                        fi
+
                         # Log when status changes
                         if [ "$STATUS" != "$LAST_STATUS" ]; then
-                          echo "Deployment status: ${STATUS} (elapsed: ${ELAPSED}s / ${MAX_WAIT_SECONDS}s)"
+                          if [ "$RATE_LIMIT_DETECTED" = true ]; then
+                            echo "Deployment status: ${STATUS} (elapsed: ${ELAPSED}s / ${MAX_WAIT_SECONDS}s) [Rate limited - polling every ${POLL_INTERVAL}s]"
+                          else
+                            echo "Deployment status: ${STATUS} (elapsed: ${ELAPSED}s / ${MAX_WAIT_SECONDS}s)"
+                          fi
                           LAST_STATUS="$STATUS"
                           LAST_HEARTBEAT=$ELAPSED
                         # Log heartbeat periodically even if status hasn't changed (every 5 minutes)
                         elif [ $((ELAPSED - LAST_HEARTBEAT)) -ge $HEARTBEAT_INTERVAL ]; then
                           MINUTES=$((ELAPSED / 60))
-                          echo "##[debug]Still polling... Status: ${STATUS} (${MINUTES} minutes elapsed)"
+                          if [ "$RATE_LIMIT_DETECTED" = true ]; then
+                            echo "##[debug]Still polling... Status: ${STATUS} (${MINUTES} minutes elapsed) [Rate limited - polling every ${POLL_INTERVAL}s]"
+                          else
+                            echo "##[debug]Still polling... Status: ${STATUS} (${MINUTES} minutes elapsed)"
+                          fi
                           LAST_HEARTBEAT=$ELAPSED
                         fi
 
                         # Check if deployment completed
                         if [ "$STATUS" == "Succeeded" ]; then
                           echo "##[section]✓ Deployment completed successfully!"
+                          
+                          if [ "$RATE_LIMIT_DETECTED" = true ]; then
+                            echo "Note: Deployment completed despite rate limiting. Azure automatically retried operations."
+                          fi
                           
                           # Get deployment outputs for logging
                           OUTPUTS=$(az deployment tenant show \
@@ -415,6 +607,12 @@ stages:
                         elif [ "$STATUS" == "Failed" ]; then
                           echo "##[error]Deployment failed!"
                           
+                          # Check if failure was due to rate limiting
+                          if [ "$RATE_LIMIT_DETECTED" = true ]; then
+                            echo "##[warning]Rate limiting was detected during deployment. This may have contributed to the failure."
+                            echo "Consider waiting longer or reducing concurrent subscription creation operations."
+                          fi
+                          
                           # Get error details
                           ERROR=$(az deployment tenant show \
                             --name "${DEPLOYMENT_NAME}" \
@@ -426,13 +624,25 @@ stages:
                             echo "$ERROR" | jq '.' 2>/dev/null || echo "$ERROR"
                           fi
                           
+                          # Also check operations for detailed error info
+                          echo "Checking deployment operations for additional details..."
+                          OPERATIONS=$(az rest --method GET \
+                            --url "https://management.azure.com/providers/Microsoft.Resources/deployments/${DEPLOYMENT_NAME}/operations?api-version=2022-09-01" \
+                            --query "value[?properties.provisioningState == 'Failed']" \
+                            --output json 2>/dev/null || echo "[]")
+                          
+                          if [ "$OPERATIONS" != "[]" ] && [ -n "$OPERATIONS" ]; then
+                            echo "Failed operations:"
+                            echo "$OPERATIONS" | jq '.[] | {Resource: .properties.targetResource.resourceName, StatusCode: .properties.statusCode, StatusMessage: .properties.statusMessage}' 2>/dev/null || echo "$OPERATIONS"
+                          fi
+                          
                           exit 1
                         elif [ "$STATUS" == "Canceled" ]; then
                           echo "##[error]Deployment was canceled"
                           exit 1
                         fi
 
-                        # Wait before next poll
+                        # Wait before next poll (using dynamic interval)
                         sleep $POLL_INTERVAL
                         ELAPSED=$((ELAPSED + POLL_INTERVAL))
                       done
@@ -440,6 +650,20 @@ stages:
                       # Timeout reached
                       echo "##[error]Deployment did not complete within ${MAX_WAIT_SECONDS} seconds (90 minutes)"
                       echo "Current status: ${STATUS}"
-                      echo "The deployment may still be in progress. Check Azure Portal for current status."
+
+                      if [ "$RATE_LIMIT_DETECTED" = true ]; then
+                        echo "##[warning]Rate limiting (HTTP 429) was detected during deployment."
+                        echo "Azure was throttling requests, which may have extended the deployment time."
+                        echo "The deployment may still be in progress. Azure will continue retrying automatically."
+                        echo ""
+                        echo "Recommendations:"
+                        echo "  1. Check Azure Portal for current deployment status"
+                        echo "  2. Wait longer before retrying (rate limits reset over time)"
+                        echo "  3. Reduce concurrent subscription creation operations"
+                        echo "  4. Consider creating subscriptions during off-peak hours"
+                      else
+                        echo "The deployment may still be in progress. Check Azure Portal for current status."
+                      fi
+
                       echo "Deployment name: ${DEPLOYMENT_NAME}"
                       exit 1

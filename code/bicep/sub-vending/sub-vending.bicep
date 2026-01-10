@@ -48,7 +48,7 @@ param projectName string
 @description('The management group ID (name) where the subscription will be placed (e.g. "corp-platform").')
 param managementGroupId string
 
-@description('The billing scope for the subscription. Required for EA/MCA/MPA. See Microsoft docs for formats.')
+@description('The billing scope for the subscription. Required for EA/MCA/MPA subscription creation. Optional for other scenarios. See Microsoft docs for formats.')
 param billingScope string = ''
 
 @description('The workload type for the subscription. Valid values: Production, DevTest')
@@ -129,9 +129,9 @@ resource mgSubscriptionAssociationExisting 'Microsoft.Management/managementGroup
 // OUTPUTS
 // ============================================================================
 
-output subscriptionAliasName string = subscriptionAliasName
-output subscriptionId string = !empty(existingSubscriptionId)
-  ? existingSubscriptionId
-  : subscriptionAlias.properties.subscriptionId
-output managementGroupResourceId string = targetMgResourceId
-output isExistingSubscription bool = !empty(existingSubscriptionId)
+// output subscriptionAliasName string = subscriptionAliasName
+// output subscriptionId string = !empty(existingSubscriptionId)
+//   ? existingSubscriptionId
+//   : subscriptionAlias.properties.subscriptionId
+// output managementGroupResourceId string = targetMgResourceId
+// output isExistingSubscription bool = !empty(existingSubscriptionId)
