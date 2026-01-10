@@ -63,6 +63,26 @@ parameters:
     displayName: "Managed By"
     type: string
     default: "Bicep"
+  - name: dailyQuotaGb
+    displayName: "Daily Ingestion Quota in GB (-1 for unlimited)"
+    type: number
+    default: -1
+  - name: alertEmailAddresses
+    displayName: "Alert Email Addresses (semicolon separated, leave empty to disable alerts)"
+    type: string
+    default: ""
+  - name: alertWebhookUri
+    displayName: "Alert Webhook URI (optional)"
+    type: string
+    default: ""
+  - name: enableAlertRules
+    displayName: "Enable Alert Rules"
+    type: boolean
+    default: true
+  - name: diagnosticStorageAccountId
+    displayName: "Storage Account Resource ID for Workspace Diagnostics (optional)"
+    type: string
+    default: ""
   - name: denySettingsMode
     displayName: "Deny Settings Mode"
     type: string
@@ -150,6 +170,23 @@ stages:
                 if [ -n "${{ parameters.managedBy }}" ]; then
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
                 fi
+                if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
+                  PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
+                fi
+                if [ -n "${{ parameters.alertEmailAddresses }}" ]; then
+                  PARAMS="$PARAMS --parameters alertEmailAddresses='${{ parameters.alertEmailAddresses }}'"
+                fi
+                if [ -n "${{ parameters.alertWebhookUri }}" ]; then
+                  PARAMS="$PARAMS --parameters alertWebhookUri='${{ parameters.alertWebhookUri }}'"
+                fi
+                if [ "${{ parameters.enableAlertRules }}" == "true" ] || [ "${{ parameters.enableAlertRules }}" == "True" ]; then
+                  PARAMS="$PARAMS --parameters enableAlertRules=true"
+                else
+                  PARAMS="$PARAMS --parameters enableAlertRules=false"
+                fi
+                if [ -n "${{ parameters.diagnosticStorageAccountId }}" ]; then
+                  PARAMS="$PARAMS --parameters diagnosticStorageAccountId='${{ parameters.diagnosticStorageAccountId }}'"
+                fi
 
                 az stack sub validate \
                   --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
@@ -208,6 +245,23 @@ stages:
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                fi
+                if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
+                  PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
+                fi
+                if [ -n "${{ parameters.alertEmailAddresses }}" ]; then
+                  PARAMS="$PARAMS --parameters alertEmailAddresses='${{ parameters.alertEmailAddresses }}'"
+                fi
+                if [ -n "${{ parameters.alertWebhookUri }}" ]; then
+                  PARAMS="$PARAMS --parameters alertWebhookUri='${{ parameters.alertWebhookUri }}'"
+                fi
+                if [ "${{ parameters.enableAlertRules }}" == "true" ] || [ "${{ parameters.enableAlertRules }}" == "True" ]; then
+                  PARAMS="$PARAMS --parameters enableAlertRules=true"
+                else
+                  PARAMS="$PARAMS --parameters enableAlertRules=false"
+                fi
+                if [ -n "${{ parameters.diagnosticStorageAccountId }}" ]; then
+                  PARAMS="$PARAMS --parameters diagnosticStorageAccountId='${{ parameters.diagnosticStorageAccountId }}'"
                 fi
 
                 az stack sub create \
@@ -274,6 +328,23 @@ stages:
                       fi
                       if [ -n "${{ parameters.managedBy }}" ]; then
                         PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                      fi
+                      if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
+                        PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
+                      fi
+                      if [ -n "${{ parameters.alertEmailAddresses }}" ]; then
+                        PARAMS="$PARAMS --parameters alertEmailAddresses='${{ parameters.alertEmailAddresses }}'"
+                      fi
+                      if [ -n "${{ parameters.alertWebhookUri }}" ]; then
+                        PARAMS="$PARAMS --parameters alertWebhookUri='${{ parameters.alertWebhookUri }}'"
+                      fi
+                      if [ "${{ parameters.enableAlertRules }}" == "true" ] || [ "${{ parameters.enableAlertRules }}" == "True" ]; then
+                        PARAMS="$PARAMS --parameters enableAlertRules=true"
+                      else
+                        PARAMS="$PARAMS --parameters enableAlertRules=false"
+                      fi
+                      if [ -n "${{ parameters.diagnosticStorageAccountId }}" ]; then
+                        PARAMS="$PARAMS --parameters diagnosticStorageAccountId='${{ parameters.diagnosticStorageAccountId }}'"
                       fi
 
                       az stack sub create \
