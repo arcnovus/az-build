@@ -292,7 +292,7 @@ stages:
     jobs:
       - deployment: DeploySubscriptionVending
         displayName: "Deploy Subscription Vending"
-        timeoutInMinutes: 25
+        timeoutInMinutes: 90
         environment: "${{ parameters.environment }}"
         strategy:
           runOnce:
@@ -336,8 +336,15 @@ stages:
                       # Get existing subscription ID from lookup step (may be empty)
                       EXISTING_SUB_ID="$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
 
+                      # Deployment name for tracking
+                      DEPLOYMENT_NAME="sub-vending-$(Build.BuildNumber)"
+
+                      echo "Starting subscription vending deployment: ${DEPLOYMENT_NAME}"
+                      echo "Note: Subscription creation is asynchronous and may take 30-90 minutes to complete."
+
+                      # Start deployment with --no-wait to avoid blocking on subscription provisioning
                       az deployment tenant create \
-                        --name "sub-vending-$(Build.BuildNumber)" \
+                        --name "${DEPLOYMENT_NAME}" \
                         --location "$(deploymentLocation)" \
                         --template-file "$(templateFile)" \
                         --parameters "$(parametersFile)" \
@@ -351,4 +358,80 @@ stages:
                         --parameters instanceNumber="${{ parameters.instanceNumber }}" \
                         --parameters owner="${{ parameters.owner }}" \
                         --parameters managedBy="${{ parameters.managedBy }}" \
-                        --parameters existingSubscriptionId="$EXISTING_SUB_ID"
+                        --parameters existingSubscriptionId="$EXISTING_SUB_ID" \
+                        --no-wait
+
+                      if [ $? -ne 0 ]; then
+                        echo "##[error]Failed to start deployment"
+                        exit 1
+                      fi
+
+                      echo "✓ Deployment started successfully. Polling for completion..."
+
+                      # Poll deployment status until it completes or times out
+                      # Subscription provisioning can take 30-90 minutes
+                      MAX_WAIT_SECONDS=5400  # 90 minutes
+                      POLL_INTERVAL=60       # Check every 60 seconds
+                      ELAPSED=0
+                      LAST_STATUS=""
+
+                      while [ $ELAPSED -lt $MAX_WAIT_SECONDS ]; do
+                        # Get current deployment status
+                        STATUS=$(az deployment tenant show \
+                          --name "${DEPLOYMENT_NAME}" \
+                          --query "properties.provisioningState" \
+                          --output tsv 2>/dev/null || echo "Unknown")
+
+                        # Only log when status changes to reduce noise
+                        if [ "$STATUS" != "$LAST_STATUS" ]; then
+                          echo "Deployment status: ${STATUS} (elapsed: ${ELAPSED}s / ${MAX_WAIT_SECONDS}s)"
+                          LAST_STATUS="$STATUS"
+                        fi
+
+                        # Check if deployment completed
+                        if [ "$STATUS" == "Succeeded" ]; then
+                          echo "##[section]✓ Deployment completed successfully!"
+                          
+                          # Get deployment outputs for logging
+                          OUTPUTS=$(az deployment tenant show \
+                            --name "${DEPLOYMENT_NAME}" \
+                            --query "properties.outputs" \
+                            --output json 2>/dev/null || echo "{}")
+                          
+                          if [ "$OUTPUTS" != "{}" ] && [ -n "$OUTPUTS" ]; then
+                            echo "Deployment outputs:"
+                            echo "$OUTPUTS" | jq '.' 2>/dev/null || echo "$OUTPUTS"
+                          fi
+                          
+                          exit 0
+                        elif [ "$STATUS" == "Failed" ]; then
+                          echo "##[error]Deployment failed!"
+                          
+                          # Get error details
+                          ERROR=$(az deployment tenant show \
+                            --name "${DEPLOYMENT_NAME}" \
+                            --query "properties.error" \
+                            --output json 2>/dev/null || echo "{}")
+                          
+                          if [ "$ERROR" != "{}" ] && [ -n "$ERROR" ]; then
+                            echo "Error details:"
+                            echo "$ERROR" | jq '.' 2>/dev/null || echo "$ERROR"
+                          fi
+                          
+                          exit 1
+                        elif [ "$STATUS" == "Canceled" ]; then
+                          echo "##[error]Deployment was canceled"
+                          exit 1
+                        fi
+
+                        # Wait before next poll
+                        sleep $POLL_INTERVAL
+                        ELAPSED=$((ELAPSED + POLL_INTERVAL))
+                      done
+
+                      # Timeout reached
+                      echo "##[error]Deployment did not complete within ${MAX_WAIT_SECONDS} seconds (90 minutes)"
+                      echo "Current status: ${STATUS}"
+                      echo "The deployment may still be in progress. Check Azure Portal for current status."
+                      echo "Deployment name: ${DEPLOYMENT_NAME}"
+                      exit 1
