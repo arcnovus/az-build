@@ -229,13 +229,8 @@ module dataIngestionAlert 'br/public:avm/res/insights/scheduled-query-rule:0.3.0
     criterias: {
       allOf: [
         {
-          query: '''
-            Usage
-            | where TimeGenerated > ago(1d)
-            | where IsBillable == true
-            | summarize TotalGB = sum(Quantity) / 1000
-            | where TotalGB > ${dataIngestionThresholdGb}
-          '''
+          // Note: Using string concatenation because triple-quoted strings don't support interpolation
+          query: 'Usage | where TimeGenerated > ago(1d) | where IsBillable == true | summarize TotalGB = sum(Quantity) / 1000 | where TotalGB > ${dataIngestionThresholdGb}'
           timeAggregation: 'Count'
           operator: 'GreaterThan'
           threshold: 0
@@ -273,12 +268,7 @@ module workspaceAvailabilityAlert 'br/public:avm/res/insights/scheduled-query-ru
     criterias: {
       allOf: [
         {
-          query: '''
-            Usage
-            | where TimeGenerated > ago(1h)
-            | summarize RecordCount = count()
-            | where RecordCount == 0
-          '''
+          query: 'Usage | where TimeGenerated > ago(1h) | summarize RecordCount = count() | where RecordCount == 0'
           timeAggregation: 'Count'
           operator: 'GreaterThan'
           threshold: 0
