@@ -372,8 +372,10 @@ stages:
                       # Subscription provisioning can take 30-90 minutes
                       MAX_WAIT_SECONDS=5400  # 90 minutes
                       POLL_INTERVAL=60       # Check every 60 seconds
+                      HEARTBEAT_INTERVAL=300 # Log heartbeat every 5 minutes
                       ELAPSED=0
                       LAST_STATUS=""
+                      LAST_HEARTBEAT=0
 
                       while [ $ELAPSED -lt $MAX_WAIT_SECONDS ]; do
                         # Get current deployment status
@@ -382,10 +384,16 @@ stages:
                           --query "properties.provisioningState" \
                           --output tsv 2>/dev/null || echo "Unknown")
 
-                        # Only log when status changes to reduce noise
+                        # Log when status changes
                         if [ "$STATUS" != "$LAST_STATUS" ]; then
                           echo "Deployment status: ${STATUS} (elapsed: ${ELAPSED}s / ${MAX_WAIT_SECONDS}s)"
                           LAST_STATUS="$STATUS"
+                          LAST_HEARTBEAT=$ELAPSED
+                        # Log heartbeat periodically even if status hasn't changed (every 5 minutes)
+                        elif [ $((ELAPSED - LAST_HEARTBEAT)) -ge $HEARTBEAT_INTERVAL ]; then
+                          MINUTES=$((ELAPSED / 60))
+                          echo "##[debug]Still polling... Status: ${STATUS} (${MINUTES} minutes elapsed)"
+                          LAST_HEARTBEAT=$ELAPSED
                         fi
 
                         # Check if deployment completed
