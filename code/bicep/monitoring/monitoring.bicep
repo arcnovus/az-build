@@ -205,85 +205,94 @@ module actionGroup 'br/public:avm/res/insights/action-group:0.4.0' = {
 }
 
 // ============================================================================
-// METRIC ALERTS
+// LOG-BASED ALERTS (Scheduled Query Rules)
+// Note: Log Analytics workspaces don't support metric alerts for ingestion/availability.
+// We use KQL queries against the Usage table instead.
 // ============================================================================
 
 // Alert: Data Ingestion Volume
-// Triggers when data ingestion exceeds the configured threshold
-module dataIngestionAlert 'br/public:avm/res/insights/metric-alert:0.3.0' = if (enableAlerts) {
+// Triggers when daily data ingestion exceeds the configured threshold
+module dataIngestionAlert 'br/public:avm/res/insights/scheduled-query-rule:0.3.0' = if (enableAlerts) {
   name: 'deploy-alert-data-ingestion-${workspaceName}'
   scope: monitoringResourceGroup
   params: {
     name: 'alert-data-ingestion-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
     alertDescription: 'Alert when Log Analytics workspace data ingestion exceeds ${dataIngestionThresholdGb} GB per day'
-    severity: alertSeverity
     enabled: true
-    evaluationFrequency: alertEvaluationFrequency
-    windowSize: alertWindowSize
+    kind: 'LogAlert'
     scopes: [
       logAnalyticsWorkspace.outputs.resourceId
     ]
-    targetResourceType: 'Microsoft.OperationalInsights/workspaces'
-    targetResourceRegion: location
-    criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-      allof: [
+    evaluationFrequency: alertEvaluationFrequency
+    windowSize: 'P1D' // 1 day window for daily ingestion
+    severity: alertSeverity
+    criterias: {
+      allOf: [
         {
-          name: 'DataIngestionThreshold'
-          metricName: 'BillableDataIngestedGB'
-          metricNamespace: 'Microsoft.OperationalInsights/workspaces'
+          query: '''
+            Usage
+            | where TimeGenerated > ago(1d)
+            | where IsBillable == true
+            | summarize TotalGB = sum(Quantity) / 1000
+            | where TotalGB > ${dataIngestionThresholdGb}
+          '''
+          timeAggregation: 'Count'
           operator: 'GreaterThan'
-          threshold: dataIngestionThresholdGb
-          timeAggregation: 'Total'
-          criterionType: 'StaticThresholdCriterion'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
         }
       ]
     }
     actions: [
-      {
-        actionGroupId: actionGroup.outputs.resourceId
-      }
+      actionGroup.outputs.resourceId
     ]
+    autoMitigate: true
     tags: commonTags
   }
 }
 
-// Alert: Workspace Availability
-// Triggers when workspace availability drops below threshold
-module workspaceAvailabilityAlert 'br/public:avm/res/insights/metric-alert:0.3.0' = if (enableAlerts) {
+// Alert: Workspace Availability (Heartbeat-based)
+// Triggers when no heartbeat data is received, indicating potential availability issues
+module workspaceAvailabilityAlert 'br/public:avm/res/insights/scheduled-query-rule:0.3.0' = if (enableAlerts) {
   name: 'deploy-alert-availability-${workspaceName}'
   scope: monitoringResourceGroup
   params: {
     name: 'alert-availability-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
-    alertDescription: 'Alert when Log Analytics workspace availability drops below 99%'
-    severity: 1 // Error severity for availability issues
+    alertDescription: 'Alert when Log Analytics workspace has no recent data ingestion (potential availability issue)'
     enabled: true
-    evaluationFrequency: alertEvaluationFrequency
-    windowSize: alertWindowSize
+    kind: 'LogAlert'
     scopes: [
       logAnalyticsWorkspace.outputs.resourceId
     ]
-    targetResourceType: 'Microsoft.OperationalInsights/workspaces'
-    targetResourceRegion: location
-    criteria: {
-      'odata.type': 'Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria'
-      allof: [
+    evaluationFrequency: alertEvaluationFrequency
+    windowSize: alertWindowSize
+    severity: 1 // Error severity for availability issues
+    criterias: {
+      allOf: [
         {
-          name: 'AvailabilityThreshold'
-          metricName: 'AvailabilityRate'
-          metricNamespace: 'Microsoft.OperationalInsights/workspaces'
-          operator: 'LessThan'
-          threshold: 99
-          timeAggregation: 'Average'
-          criterionType: 'StaticThresholdCriterion'
+          query: '''
+            Usage
+            | where TimeGenerated > ago(1h)
+            | summarize RecordCount = count()
+            | where RecordCount == 0
+          '''
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+          failingPeriods: {
+            numberOfEvaluationPeriods: 1
+            minFailingPeriodsToAlert: 1
+          }
         }
       ]
     }
     actions: [
-      {
-        actionGroupId: actionGroup.outputs.resourceId
-      }
+      actionGroup.outputs.resourceId
     ]
+    autoMitigate: true
     tags: commonTags
   }
 }
