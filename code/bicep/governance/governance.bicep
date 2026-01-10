@@ -22,13 +22,6 @@ param enableCanadaPBMM bool = true
 var mcsbInitiativeId = '/providers/Microsoft.Authorization/policySetDefinitions/1f3afdf9-d0c9-4c3d-847f-89da613e70a8'
 var canadaPbmmInitiativeId = '/providers/Microsoft.Authorization/policySetDefinitions/4c4a5f27-de81-430b-b4e5-9cbd50595a87'
 
-// Common tags for policy assignments
-var commonTags = {
-  Environment: environment
-  Owner: owner
-  ManagedBy: managedBy
-}
-
 // Microsoft Cloud Security Benchmark Policy Assignment
 resource mcsbAssignment 'Microsoft.Authorization/policyAssignments@2024-04-01' = if (enableMCSB) {
   name: 'mcsb-audit-${environment}'
@@ -80,10 +73,22 @@ resource canadaPbmmAssignment 'Microsoft.Authorization/policyAssignments@2024-04
 }
 
 // Outputs
+@description('MCSB Policy Assignment Resource ID')
 output mcsbAssignmentId string = enableMCSB ? mcsbAssignment.id : ''
+
+@description('MCSB Policy Assignment Name')
 output mcsbAssignmentName string = enableMCSB ? mcsbAssignment.name : ''
+
+@description('MCSB Policy Assignment Managed Identity Principal ID')
+// Note: BCP318 warning is a false positive - the ternary operator ensures the resource exists before access
 output mcsbPrincipalId string = enableMCSB ? mcsbAssignment.identity.principalId : ''
 
+@description('Canada PBMM Policy Assignment Resource ID')
 output canadaPbmmAssignmentId string = enableCanadaPBMM ? canadaPbmmAssignment.id : ''
+
+@description('Canada PBMM Policy Assignment Name')
 output canadaPbmmAssignmentName string = enableCanadaPBMM ? canadaPbmmAssignment.name : ''
+
+@description('Canada PBMM Policy Assignment Managed Identity Principal ID')
+// Note: BCP318 warning is a false positive - the ternary operator ensures the resource exists before access
 output canadaPbmmPrincipalId string = enableCanadaPBMM ? canadaPbmmAssignment.identity.principalId : ''

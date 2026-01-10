@@ -143,28 +143,17 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                PARAMS=""
-                if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
-                fi
-                if [ -n "${{ parameters.location }}" ]; then
-                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
-                fi
-                if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
-                fi
-                if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
-                fi
-                PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
-                PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
-
                 az deployment mg validate \
                   --management-group-id "${{ parameters.managementGroupId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  $PARAMS
+                  --parameters environment="${{ parameters.environment }}" \
+                  --parameters location="${{ parameters.location }}" \
+                  --parameters owner="${{ parameters.owner }}" \
+                  --parameters managedBy="${{ parameters.managedBy }}" \
+                  --parameters enableMCSB=${{ parameters.enableMCSB }} \
+                  --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -189,28 +178,17 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                PARAMS=""
-                if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
-                fi
-                if [ -n "${{ parameters.location }}" ]; then
-                  PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
-                fi
-                if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
-                fi
-                if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
-                fi
-                PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
-                PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
-
                 az deployment mg what-if \
                   --management-group-id "${{ parameters.managementGroupId }}" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  $PARAMS
+                  --parameters environment="${{ parameters.environment }}" \
+                  --parameters location="${{ parameters.location }}" \
+                  --parameters owner="${{ parameters.owner }}" \
+                  --parameters managedBy="${{ parameters.managedBy }}" \
+                  --parameters enableMCSB=${{ parameters.enableMCSB }} \
+                  --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}
 
   - stage: Deploy
     displayName: "Deploy Governance Policies"
@@ -241,26 +219,15 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      PARAMS=""
-                      if [ -n "${{ parameters.environment }}" ]; then
-                        PARAMS="$PARAMS --parameters environment='${{ parameters.environment }}'"
-                      fi
-                      if [ -n "${{ parameters.location }}" ]; then
-                        PARAMS="$PARAMS --parameters location='${{ parameters.location }}'"
-                      fi
-                      if [ -n "${{ parameters.owner }}" ]; then
-                        PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
-                      fi
-                      if [ -n "${{ parameters.managedBy }}" ]; then
-                        PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
-                      fi
-                      PARAMS="$PARAMS --parameters enableMCSB=${{ parameters.enableMCSB }}"
-                      PARAMS="$PARAMS --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}"
-
                       az deployment mg create \
                         --name "$(deploymentName)" \
                         --management-group-id "${{ parameters.managementGroupId }}" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
-                        $PARAMS
+                        --parameters environment="${{ parameters.environment }}" \
+                        --parameters location="${{ parameters.location }}" \
+                        --parameters owner="${{ parameters.owner }}" \
+                        --parameters managedBy="${{ parameters.managedBy }}" \
+                        --parameters enableMCSB=${{ parameters.enableMCSB }} \
+                        --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}
