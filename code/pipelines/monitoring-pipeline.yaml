@@ -194,7 +194,6 @@ stages:
                     fi
                   done
                   EMAIL_RECEIVERS+="]"
-                  PARAMS="$PARAMS --parameters actionGroupEmailReceivers='${EMAIL_RECEIVERS}'"
                 fi
 
                 # Convert comma-separated SMS list from variable group to JSON array for Bicep
@@ -218,18 +217,29 @@ stages:
                     fi
                   done
                   SMS_RECEIVERS+="]"
-                  PARAMS="$PARAMS --parameters actionGroupSmsReceivers='${SMS_RECEIVERS}'"
                 fi
 
-                az stack sub validate \
-                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
-                  --subscription "$(monitoringSubscriptionId)" \
+                # Build the az stack command with proper array handling
+                # Arrays must be passed without quotes to avoid being treated as strings
+                CMD="az stack sub validate \
+                  --name \"stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}\" \
+                  --subscription \"$(monitoringSubscriptionId)\" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
                   --deny-settings-mode ${{ parameters.denySettingsMode }} \
                   --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
-                  $PARAMS
+                  $PARAMS"
+
+                # Add array parameters without quotes
+                if [ -n "$EMAIL_RECEIVERS" ]; then
+                  CMD="$CMD --parameters actionGroupEmailReceivers=$EMAIL_RECEIVERS"
+                fi
+                if [ -n "$SMS_RECEIVERS" ]; then
+                  CMD="$CMD --parameters actionGroupSmsReceivers=$SMS_RECEIVERS"
+                fi
+
+                eval $CMD
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -301,7 +311,6 @@ stages:
                     fi
                   done
                   EMAIL_RECEIVERS+="]"
-                  PARAMS="$PARAMS --parameters actionGroupEmailReceivers='${EMAIL_RECEIVERS}'"
                 fi
 
                 # Convert comma-separated SMS list from variable group to JSON array for Bicep
@@ -324,19 +333,28 @@ stages:
                     fi
                   done
                   SMS_RECEIVERS+="]"
-                  PARAMS="$PARAMS --parameters actionGroupSmsReceivers='${SMS_RECEIVERS}'"
                 fi
 
-                az stack sub create \
-                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
-                  --subscription "$(monitoringSubscriptionId)" \
+                # Build the az stack command with proper array handling
+                CMD="az stack sub create \
+                  --name \"stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}\" \
+                  --subscription \"$(monitoringSubscriptionId)\" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
                   --deny-settings-mode ${{ parameters.denySettingsMode }} \
                   --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   --what-if \
-                  $PARAMS
+                  $PARAMS"
+
+                if [ -n "$EMAIL_RECEIVERS" ]; then
+                  CMD="$CMD --parameters actionGroupEmailReceivers=$EMAIL_RECEIVERS"
+                fi
+                if [ -n "$SMS_RECEIVERS" ]; then
+                  CMD="$CMD --parameters actionGroupSmsReceivers=$SMS_RECEIVERS"
+                fi
+
+                eval $CMD
 
   - stage: Deploy
     displayName: "Deploy Monitoring Deployment Stack"
@@ -414,7 +432,6 @@ stages:
                           fi
                         done
                         EMAIL_RECEIVERS+="]"
-                        PARAMS="$PARAMS --parameters actionGroupEmailReceivers='${EMAIL_RECEIVERS}'"
                       fi
 
                       # Convert comma-separated SMS list from variable group to JSON array for Bicep
@@ -437,16 +454,25 @@ stages:
                           fi
                         done
                         SMS_RECEIVERS+="]"
-                        PARAMS="$PARAMS --parameters actionGroupSmsReceivers='${SMS_RECEIVERS}'"
                       fi
 
-                      az stack sub create \
-                        --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
-                        --subscription "$(monitoringSubscriptionId)" \
+                      # Build the az stack command with proper array handling
+                      CMD="az stack sub create \
+                        --name \"stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}\" \
+                        --subscription \"$(monitoringSubscriptionId)\" \
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
                         --deny-settings-mode ${{ parameters.denySettingsMode }} \
                         --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                         --yes \
-                        $PARAMS
+                        $PARAMS"
+
+                      if [ -n "$EMAIL_RECEIVERS" ]; then
+                        CMD="$CMD --parameters actionGroupEmailReceivers=$EMAIL_RECEIVERS"
+                      fi
+                      if [ -n "$SMS_RECEIVERS" ]; then
+                        CMD="$CMD --parameters actionGroupSmsReceivers=$SMS_RECEIVERS"
+                      fi
+
+                      eval $CMD

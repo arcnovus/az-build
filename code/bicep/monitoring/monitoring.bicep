@@ -355,10 +355,10 @@ output actionGroupResourceId string = actionGroup.outputs.resourceId
 output actionGroupName string = actionGroup.outputs.name
 
 @description('The resource ID of the data ingestion alert (empty if alerts disabled)')
-output dataIngestionAlertResourceId string = enableAlerts ? dataIngestionAlert.outputs.resourceId : ''
+output dataIngestionAlertResourceId string = enableAlerts ? dataIngestionAlert!.outputs.resourceId : ''
 
 @description('The resource ID of the availability alert (empty if alerts disabled)')
-output availabilityAlertResourceId string = enableAlerts ? workspaceAvailabilityAlert.outputs.resourceId : ''
+output availabilityAlertResourceId string = enableAlerts ? workspaceAvailabilityAlert!.outputs.resourceId : ''
 
 @description('The resource ID of the query throttling alert (empty if alerts disabled)')
-output queryThrottlingAlertResourceId string = enableAlerts ? queryThrottlingAlert.outputs.resourceId : ''
+output queryThrottlingAlertResourceId string = enableAlerts ? queryThrottlingAlert!.outputs.resourceId : ''
