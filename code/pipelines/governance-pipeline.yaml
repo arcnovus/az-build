@@ -45,8 +45,34 @@ variables:
     value: "governance-${{ parameters.environment }}-${{ parameters.locationCode }}-$(Build.BuildNumber)"
 
 parameters:
-  - template: templates/parameters/management-group-param.yaml
-  - template: templates/parameters/environment-param.yaml
+  - name: managementGroupId
+    displayName: "Management Group ID (where policies will be assigned)"
+    type: string
+    default: "mg-platform"
+    values:
+      - $(azureTenantId)
+      - "mg-platform"
+      - "mg-landing-zone"
+      - "mg-sandbox"
+      - "mg-decommissioned"
+      - "mg-management"
+      - "mg-connectivity"
+      - "mg-corp-prod"
+      - "mg-corp-non-prod"
+      - "mg-online-prod"
+      - "mg-online-non-prod"
+  - name: environment
+    displayName: "Environment"
+    type: string
+    default: "live"
+    values:
+      - nonprod
+      - dev
+      - test
+      - uat
+      - staging
+      - prod
+      - live
   - name: locationCode
     displayName: "Location Code (e.g., cac for canada central)"
     type: string

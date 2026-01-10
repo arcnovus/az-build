@@ -66,7 +66,18 @@ parameters:
     displayName: "Workload Alias (used for naming conventions)"
     type: string
     default: ""
-  - template: templates/parameters/environment-param.yaml
+  - name: environment
+    displayName: "Environment"
+    type: string
+    default: ""
+    values:
+      - nonprod
+      - dev
+      - test
+      - uat
+      - staging
+      - prod
+      - live
   - name: locationCode
     displayName: "Location Code (e.g., cac for canada central)"
     type: string
@@ -75,7 +86,22 @@ parameters:
     displayName: "Instance Number (e.g., 001 for the first instance)"
     type: string
     default: ""
-  - template: templates/parameters/management-group-param.yaml
+  - name: managementGroupId
+    displayName: "Management Group ID"
+    type: string
+    default: ""
+    values:
+      - $(azureTenantId)
+      - "mg-platform"
+      - "mg-landing-zone"
+      - "mg-sandbox"
+      - "mg-decommissioned"
+      - "mg-management"
+      - "mg-connectivity"
+      - "mg-corp-prod"
+      - "mg-corp-non-prod"
+      - "mg-online-prod"
+      - "mg-online-non-prod"
   - name: workload
     displayName: "Workload Type"
     type: string

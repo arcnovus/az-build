@@ -32,7 +32,18 @@ parameters:
     displayName: "Workload Alias"
     type: string
     default: "devcenter"
-  - template: templates/parameters/environment-param.yaml
+  - name: environment
+    displayName: "Environment"
+    type: string
+    default: "live"
+    values:
+      - nonprod
+      - dev
+      - test
+      - uat
+      - staging
+      - prod
+      - live
   - name: locationCode
     displayName: "Location Code (e.g., cac for canada central)"
     type: string
@@ -65,7 +76,30 @@ parameters:
     type: string
     default: ""
   # Deployment Stack settings
-  - template: templates/parameters/deployment-stack-settings.yaml
+  - name: denySettingsMode
+    displayName: "Deny Settings Mode"
+    type: string
+    default: "denyWriteAndDelete"
+    values:
+      - none
+      - denyDelete
+      - denyWriteAndDelete
+  - name: actionOnUnmanage
+    displayName: "Action on Unmanaged Resources"
+    type: string
+    default: "detachAll"
+    values:
+      - deleteResources
+      - deleteAll
+      - detachAll
+  - name: deploymentStage
+    displayName: "Pipeline Stage to Run"
+    type: string
+    default: "WhatIf"
+    values:
+      - Validation
+      - WhatIf
+      - Deploy
 
 stages:
   - stage: Validate
