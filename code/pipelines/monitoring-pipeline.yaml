@@ -145,9 +145,8 @@ stages:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
-              failOnStandardError: true
               inlineScript: |
-                set -e  # Exit on any error
+                set -euo pipefail  # Exit on error, undefined vars, and pipe failures
                 # Build parameter overrides for pipeline parameters
                 # Note: Don't use quotes around values - they become part of the value
                 PARAMS=""
@@ -267,9 +266,8 @@ stages:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
-              failOnStandardError: true
               inlineScript: |
-                set -e  # Exit on any error
+                set -euo pipefail  # Exit on error, undefined vars, and pipe failures
                 # Build parameter overrides for pipeline parameters
                 # Note: Don't use quotes around values - they become part of the value
                 PARAMS=""
@@ -392,9 +390,8 @@ stages:
                     azureSubscription: "$(azureServiceConnection)"
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
-                    failOnStandardError: true
                     inlineScript: |
-                      set -e  # Exit on any error
+                      set -euo pipefail  # Exit on error, undefined vars, and pipe failures
                       # Build parameter overrides for pipeline parameters
                       # Note: Don't use quotes around values - they become part of the value
                       PARAMS=""
