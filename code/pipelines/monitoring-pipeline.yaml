@@ -261,106 +261,54 @@ stages:
           - checkout: self
 
           - task: AzureCLI@2
-            displayName: "What-If Monitoring Deployment Stack"
+            displayName: "Show Current Deployment Stack State"
             inputs:
               azureSubscription: "$(azureServiceConnection)"
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                set -euo pipefail  # Exit on error, undefined vars, and pipe failures
-                # Build parameter overrides for pipeline parameters
-                # Note: Don't use quotes around values - they become part of the value
-                PARAMS=""
-                if [ -n "${{ parameters.workloadAlias }}" ]; then
-                  PARAMS="$PARAMS --parameters workloadAlias=${{ parameters.workloadAlias }}"
-                fi
-                if [ -n "${{ parameters.environment }}" ]; then
-                  PARAMS="$PARAMS --parameters environment=${{ parameters.environment }}"
-                fi
-                if [ -n "${{ parameters.locationCode }}" ]; then
-                  PARAMS="$PARAMS --parameters locationCode=${{ parameters.locationCode }}"
-                fi
-                if [ -n "${{ parameters.instanceNumber }}" ]; then
-                  PARAMS="$PARAMS --parameters instanceNumber=${{ parameters.instanceNumber }}"
-                fi
-                if [ -n "${{ parameters.location }}" ]; then
-                  PARAMS="$PARAMS --parameters location=${{ parameters.location }}"
-                fi
-                if [ -n "${{ parameters.dataRetention }}" ]; then
-                  PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
-                fi
-                if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
-                  PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
-                fi
-                if [ -n "${{ parameters.owner }}" ]; then
-                  PARAMS="$PARAMS --parameters owner=${{ parameters.owner }}"
-                fi
-                if [ -n "${{ parameters.managedBy }}" ]; then
-                  PARAMS="$PARAMS --parameters managedBy=${{ parameters.managedBy }}"
-                fi
+                set -uo pipefail
+                # Note: Deployment stacks don't support traditional what-if analysis
+                # because deny assignments block az deployment sub what-if.
+                # Instead, we show the current stack state for review.
 
-                # Convert comma-separated email list from variable group to JSON array for Bicep
-                EMAIL_RECEIVERS="[]"
-                if [ -n "$(actionGroupEmails)" ]; then
-                  EMAIL_RECEIVERS="["
-                  IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
-                  FIRST=true
-                  for email in "${EMAILS[@]}"; do
-                    email=$(echo "$email" | xargs)
-                    if [ -n "$email" ]; then
-                      if [ "$FIRST" = true ]; then
-                        FIRST=false
-                      else
-                        EMAIL_RECEIVERS+=","
-                      fi
-                      EMAIL_RECEIVERS+="{\"name\":\"${email%%@*}\",\"emailAddress\":\"${email}\",\"useCommonAlertSchema\":true}"
-                    fi
-                  done
-                  EMAIL_RECEIVERS+="]"
-                fi
+                STACK_NAME="stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}"
 
-                # Convert comma-separated SMS list from variable group to JSON array for Bicep
-                SMS_RECEIVERS="[]"
-                if [ -n "$(actionGroupSmsNumbers)" ]; then
-                  SMS_RECEIVERS="["
-                  IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
-                  FIRST=true
-                  for sms in "${SMS_LIST[@]}"; do
-                    sms=$(echo "$sms" | xargs)
-                    if [ -n "$sms" ]; then
-                      IFS=':' read -r country phone <<< "$sms"
-                      if [ -n "$country" ] && [ -n "$phone" ]; then
-                        if [ "$FIRST" = true ]; then
-                          FIRST=false
-                        else
-                          SMS_RECEIVERS+=","
-                        fi
-                        SMS_RECEIVERS+="{\"name\":\"SMS-${phone}\",\"countryCode\":\"${country}\",\"phoneNumber\":\"${phone}\"}"
-                      fi
-                    fi
-                  done
-                  SMS_RECEIVERS+="]"
-                fi
+                echo "=========================================="
+                echo "Deployment Stack: ${STACK_NAME}"
+                echo "=========================================="
+                echo ""
 
-                # Write array values to temp files (one value per file) to avoid shell escaping issues
-                EMAIL_FILE=$(mktemp)
-                SMS_FILE=$(mktemp)
-                echo "${EMAIL_RECEIVERS}" > "$EMAIL_FILE"
-                echo "${SMS_RECEIVERS}" > "$SMS_FILE"
-
-                # Use az deployment sub what-if for what-if analysis
-                # (az stack sub create doesn't support --what-if)
-                az deployment sub what-if \
-                  --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
+                # Check if stack exists
+                if az stack sub show \
+                  --name "${STACK_NAME}" \
                   --subscription "$(monitoringSubscriptionId)" \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  --parameters actionGroupEmailReceivers=@"$EMAIL_FILE" \
-                  --parameters actionGroupSmsReceivers=@"$SMS_FILE" \
-                  $PARAMS
+                  --output table 2>/dev/null; then
+                  echo ""
+                  echo "✓ Stack exists - will be updated"
+                  echo ""
+                  echo "Current managed resources:"
+                  az stack sub show \
+                    --name "${STACK_NAME}" \
+                    --subscription "$(monitoringSubscriptionId)" \
+                    --query "resources[].{id:id, status:status}" \
+                    --output table 2>/dev/null || true
+                else
+                  echo "✓ Stack does not exist - will be created"
+                fi
 
-                rm -f "$EMAIL_FILE" "$SMS_FILE"
+                echo ""
+                echo "=========================================="
+                echo "Deployment Parameters"
+                echo "=========================================="
+                echo "Workload Alias: ${{ parameters.workloadAlias }}"
+                echo "Environment: ${{ parameters.environment }}"
+                echo "Location: ${{ parameters.location }}"
+                echo "Location Code: ${{ parameters.locationCode }}"
+                echo "Instance Number: ${{ parameters.instanceNumber }}"
+                echo "Deny Settings Mode: ${{ parameters.denySettingsMode }}"
+                echo "Action on Unmanage: ${{ parameters.actionOnUnmanage }}"
+                echo "=========================================="
 
   - stage: Deploy
     displayName: "Deploy Monitoring Deployment Stack"
