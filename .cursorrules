@@ -1,0 +1,51 @@
+# Parameter Placement Strategy
+
+## Principle
+Decisions that are unlikely to need to be made at runtime should be in `bicepparam` files, not variable groups or pipeline parameters.
+
+## Parameter Placement Guidelines
+
+### Use `bicepparam` files for:
+- **Stable organization-wide defaults** that rarely change
+- **Configuration values** that are part of the infrastructure definition
+- **Complex data structures** (arrays, objects) that cannot be stored in ADO variable groups (which only support strings)
+- **Default values** that represent organizational standards
+
+Examples:
+- SKU types, capacity reservation levels
+- Alert thresholds (as individual parameters, not JSON objects)
+- Security settings (public network access, private endpoint enablement)
+- Data retention policies
+- Tag values and naming conventions
+
+### Use ADO Variable Groups for:
+- **String values** that may need to be updated organization-wide without changing code
+- **Values that change infrequently** but need centralized management
+- **Sensitive values** that should be managed separately from code
+
+Examples:
+- Email addresses for action groups
+- SMS phone numbers
+- Service connection names
+- Default owner email addresses
+
+### Use Pipeline Parameters for:
+- **Values that change per deployment run**
+- **Environment-specific values** (environment, location, instance number)
+- **Values that users need to provide** when triggering the pipeline
+
+Examples:
+- `environment`, `locationCode`, `instanceNumber`
+- `workloadAlias`, `location`
+- `owner` (if it varies per deployment)
+- `dataRetention` (if it varies by environment)
+
+## Implementation Rules
+
+1. **Never use JSON objects in variable groups** - ADO variable groups only support strings. Use individual parameters in `bicepparam` files instead.
+
+2. **Default to `bicepparam`** - When in doubt, place stable configuration in `bicepparam` files.
+
+3. **Variable groups are for strings only** - If you need complex data structures, use `bicepparam` files.
+
+4. **Pipeline parameters override** - Pipeline parameters can override `bicepparam` values when needed for runtime flexibility.

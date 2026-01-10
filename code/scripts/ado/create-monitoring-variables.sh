@@ -4,6 +4,11 @@
 # =============================================================================
 # This script creates or updates the 'monitoring-variables' variable group
 # containing variables used by the monitoring infrastructure pipeline.
+#
+# Parameter Placement Strategy:
+# - This variable group only contains STRING values that may need organization-wide updates
+# - Stable configuration (SKU, thresholds, security settings) is in bicepparam files
+# - ADO variable groups only support strings, not complex data structures
 # =============================================================================
 
 set -euo pipefail
@@ -23,11 +28,15 @@ export AZURE_DEVOPS_EXT_PAT="${ADO_PAT_TOKEN}"
 # =============================================================================
 
 GROUP_NAME="monitoring-variables"
-GROUP_DESCRIPTION="Variables for monitoring infrastructure deployment pipeline"
+GROUP_DESCRIPTION="Variables for monitoring infrastructure deployment pipeline. Contains string values only (emails, SMS numbers). Stable configuration is in bicepparam files."
 
 # Default values (can be overridden in config.sh)
 MONITORING_SUBSCRIPTION_ID="${MONITORING_SUBSCRIPTION_ID:-}"
-DATA_RETENTION_DAYS="${DATA_RETENTION_DAYS:-60}"
+
+# Action Group notification recipients
+# These are string values that may need organization-wide updates without code changes
+ACTION_GROUP_EMAILS="${ACTION_GROUP_EMAILS:-}"
+ACTION_GROUP_SMS_NUMBERS="${ACTION_GROUP_SMS_NUMBERS:-}"
 
 # =============================================================================
 # Functions
@@ -60,11 +69,19 @@ create_monitoring_variables_group() {
     # Update/Create all variables
     log_step "Setting variables..."
     
+    # Subscription ID for monitoring resources
     set_variable "$group_id" "monitoringSubscriptionId" "${MONITORING_SUBSCRIPTION_ID}"
-    set_variable "$group_id" "dataRetention" "${DATA_RETENTION_DAYS}"
+    
+    # Action Group notification recipients (string values only)
+    # These are passed to the pipeline and converted to arrays for Bicep deployment
+    set_variable "$group_id" "actionGroupEmails" "${ACTION_GROUP_EMAILS}"
+    set_variable "$group_id" "actionGroupSmsNumbers" "${ACTION_GROUP_SMS_NUMBERS}"
     
     # Remove the dummy placeholder variable if it exists
     delete_variable "$group_id" "dummy"
+    
+    # Remove deprecated variables if they exist (now in bicepparam)
+    delete_variable "$group_id" "dataRetention" 2>/dev/null || true
     
     log_success "Variable group '${GROUP_NAME}' configured successfully"
     
@@ -76,7 +93,19 @@ create_monitoring_variables_group() {
     else
         echo "  - monitoringSubscriptionId: ${MONITORING_SUBSCRIPTION_ID}"
     fi
-    echo "  - dataRetention: ${DATA_RETENTION_DAYS}"
+    if [[ -z "${ACTION_GROUP_EMAILS}" ]]; then
+        echo "  - actionGroupEmails: (empty - configure for alert notifications)"
+    else
+        echo "  - actionGroupEmails: ${ACTION_GROUP_EMAILS}"
+    fi
+    if [[ -z "${ACTION_GROUP_SMS_NUMBERS}" ]]; then
+        echo "  - actionGroupSmsNumbers: (empty - optional)"
+    else
+        echo "  - actionGroupSmsNumbers: ${ACTION_GROUP_SMS_NUMBERS}"
+    fi
+    
+    echo ""
+    log_info "Note: Stable configuration (SKU, thresholds, security settings) is defined in bicepparam files."
 }
 
 # Dry run - show what would be done
@@ -93,12 +122,23 @@ dry_run() {
     else
         echo "  - monitoringSubscriptionId: ${MONITORING_SUBSCRIPTION_ID}"
     fi
-    echo "  - dataRetention: ${DATA_RETENTION_DAYS}"
+    if [[ -z "${ACTION_GROUP_EMAILS}" ]]; then
+        echo "  - actionGroupEmails: (empty - configure for alert notifications)"
+    else
+        echo "  - actionGroupEmails: ${ACTION_GROUP_EMAILS}"
+    fi
+    if [[ -z "${ACTION_GROUP_SMS_NUMBERS}" ]]; then
+        echo "  - actionGroupSmsNumbers: (empty - optional)"
+    else
+        echo "  - actionGroupSmsNumbers: ${ACTION_GROUP_SMS_NUMBERS}"
+    fi
     echo ""
     
     log_info "Configuration:"
     echo "  - Organization: ${ADO_ORGANIZATION_URL}"
     echo "  - Project: ${ADO_PROJECT_NAME}"
+    echo ""
+    log_info "Note: Stable configuration (SKU, thresholds, security settings) is defined in bicepparam files."
 }
 
 # Display usage information
@@ -106,6 +146,14 @@ show_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Create or update the 'monitoring-variables' Azure DevOps variable group."
+    echo ""
+    echo "This variable group contains STRING values only that may need organization-wide updates:"
+    echo "  - monitoringSubscriptionId: The subscription ID for monitoring resources"
+    echo "  - actionGroupEmails: Comma-separated email addresses for alert notifications"
+    echo "  - actionGroupSmsNumbers: Comma-separated SMS numbers (optional)"
+    echo ""
+    echo "Note: Stable configuration (SKU, thresholds, security settings) is defined in bicepparam files,"
+    echo "not in variable groups. ADO variable groups only support strings."
     echo ""
     echo "Options:"
     echo "  -h, --help          Show this help message"

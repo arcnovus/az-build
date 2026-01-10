@@ -1,6 +1,16 @@
 # Azure Pipeline to deploy Monitoring Infrastructure using Deployment Stacks
 # This pipeline deploys the monitoring Bicep template as a Deployment Stack at subscription scope
-# Deploys centralized Log Analytics workspace to the monitoring subscription
+# Deploys centralized Log Analytics workspace, Action Groups, and Alert Rules
+#
+# Parameter Placement Strategy:
+# - Stable configuration (SKU, thresholds, security settings) is in bicepparam files
+# - String values that need organization-wide updates (emails, SMS) are in monitoring-variables
+# - Values that change per run (environment, location) are pipeline parameters
+#
+# Security Note:
+# Public network access controls data plane operations (log queries) only.
+# ARM API deployments work regardless of publicNetworkAccess setting.
+# Microsoft-hosted agents can deploy even with publicNetworkAccess='Disabled'.
 
 trigger: none
 pr: none
@@ -10,6 +20,7 @@ pool:
 
 variables:
   - group: common-variables
+  - group: monitoring-variables
   - name: bicepPath
     value: "code/bicep/monitoring"
   - name: templateFile
@@ -20,6 +31,9 @@ variables:
     value: "stack-monitoring-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}"
 
 parameters:
+  # ============================================================================
+  # CORE NAMING PARAMETERS (vary per deployment)
+  # ============================================================================
   - name: subscriptionId
     displayName: "Monitoring Subscription ID"
     type: string
@@ -52,10 +66,22 @@ parameters:
     displayName: "Azure Region"
     type: string
     default: "canadacentral"
+
+  # ============================================================================
+  # WORKSPACE CONFIGURATION (may vary by environment)
+  # ============================================================================
   - name: dataRetention
-    displayName: "Data Retention (days)"
+    displayName: "Data Retention (days, 30-730)"
     type: number
     default: 60
+  - name: dailyQuotaGb
+    displayName: "Daily Quota (GB, -1 for unlimited)"
+    type: number
+    default: -1
+
+  # ============================================================================
+  # OWNERSHIP PARAMETERS
+  # ============================================================================
   - name: owner
     displayName: "Owner (e.g. a group mailbox like platform-team@example.com)"
     type: string
@@ -63,6 +89,10 @@ parameters:
     displayName: "Managed By"
     type: string
     default: "Bicep"
+
+  # ============================================================================
+  # DEPLOYMENT STACK SETTINGS
+  # ============================================================================
   - name: denySettingsMode
     displayName: "Deny Settings Mode"
     type: string
@@ -125,6 +155,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
+                # Build parameter overrides for pipeline parameters
                 PARAMS=""
                 if [ -n "${{ parameters.workloadAlias }}" ]; then
                   PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
@@ -144,11 +175,59 @@ stages:
                 if [ -n "${{ parameters.dataRetention }}" ]; then
                   PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
                 fi
+                if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
+                  PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
+                fi
                 if [ -n "${{ parameters.owner }}" ]; then
                   PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                fi
+
+                # Convert comma-separated email list from variable group to JSON array for Bicep
+                # Format: "email1@example.com,email2@example.com" -> JSON array of receiver objects
+                if [ -n "$(actionGroupEmails)" ]; then
+                  EMAIL_RECEIVERS="["
+                  IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
+                  FIRST=true
+                  for email in "${EMAILS[@]}"; do
+                    email=$(echo "$email" | xargs)  # Trim whitespace
+                    if [ -n "$email" ]; then
+                      if [ "$FIRST" = true ]; then
+                        FIRST=false
+                      else
+                        EMAIL_RECEIVERS+=","
+                      fi
+                      EMAIL_RECEIVERS+="{\"name\":\"${email%%@*}\",\"emailAddress\":\"${email}\",\"useCommonAlertSchema\":true}"
+                    fi
+                  done
+                  EMAIL_RECEIVERS+="]"
+                  PARAMS="$PARAMS --parameters actionGroupEmailReceivers='${EMAIL_RECEIVERS}'"
+                fi
+
+                # Convert comma-separated SMS list from variable group to JSON array for Bicep
+                # Format: "1:5551234567,1:5559876543" -> JSON array of SMS receiver objects
+                if [ -n "$(actionGroupSmsNumbers)" ]; then
+                  SMS_RECEIVERS="["
+                  IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
+                  FIRST=true
+                  for sms in "${SMS_LIST[@]}"; do
+                    sms=$(echo "$sms" | xargs)  # Trim whitespace
+                    if [ -n "$sms" ]; then
+                      IFS=':' read -r country phone <<< "$sms"
+                      if [ -n "$country" ] && [ -n "$phone" ]; then
+                        if [ "$FIRST" = true ]; then
+                          FIRST=false
+                        else
+                          SMS_RECEIVERS+=","
+                        fi
+                        SMS_RECEIVERS+="{\"name\":\"SMS-${phone}\",\"countryCode\":\"${country}\",\"phoneNumber\":\"${phone}\"}"
+                      fi
+                    fi
+                  done
+                  SMS_RECEIVERS+="]"
+                  PARAMS="$PARAMS --parameters actionGroupSmsReceivers='${SMS_RECEIVERS}'"
                 fi
 
                 az stack sub validate \
@@ -184,6 +263,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
+                # Build parameter overrides for pipeline parameters
                 PARAMS=""
                 if [ -n "${{ parameters.workloadAlias }}" ]; then
                   PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
@@ -203,11 +283,57 @@ stages:
                 if [ -n "${{ parameters.dataRetention }}" ]; then
                   PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
                 fi
+                if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
+                  PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
+                fi
                 if [ -n "${{ parameters.owner }}" ]; then
                   PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                 fi
                 if [ -n "${{ parameters.managedBy }}" ]; then
                   PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                fi
+
+                # Convert comma-separated email list from variable group to JSON array for Bicep
+                if [ -n "$(actionGroupEmails)" ]; then
+                  EMAIL_RECEIVERS="["
+                  IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
+                  FIRST=true
+                  for email in "${EMAILS[@]}"; do
+                    email=$(echo "$email" | xargs)
+                    if [ -n "$email" ]; then
+                      if [ "$FIRST" = true ]; then
+                        FIRST=false
+                      else
+                        EMAIL_RECEIVERS+=","
+                      fi
+                      EMAIL_RECEIVERS+="{\"name\":\"${email%%@*}\",\"emailAddress\":\"${email}\",\"useCommonAlertSchema\":true}"
+                    fi
+                  done
+                  EMAIL_RECEIVERS+="]"
+                  PARAMS="$PARAMS --parameters actionGroupEmailReceivers='${EMAIL_RECEIVERS}'"
+                fi
+
+                # Convert comma-separated SMS list from variable group to JSON array for Bicep
+                if [ -n "$(actionGroupSmsNumbers)" ]; then
+                  SMS_RECEIVERS="["
+                  IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
+                  FIRST=true
+                  for sms in "${SMS_LIST[@]}"; do
+                    sms=$(echo "$sms" | xargs)
+                    if [ -n "$sms" ]; then
+                      IFS=':' read -r country phone <<< "$sms"
+                      if [ -n "$country" ] && [ -n "$phone" ]; then
+                        if [ "$FIRST" = true ]; then
+                          FIRST=false
+                        else
+                          SMS_RECEIVERS+=","
+                        fi
+                        SMS_RECEIVERS+="{\"name\":\"SMS-${phone}\",\"countryCode\":\"${country}\",\"phoneNumber\":\"${phone}\"}"
+                      fi
+                    fi
+                  done
+                  SMS_RECEIVERS+="]"
+                  PARAMS="$PARAMS --parameters actionGroupSmsReceivers='${SMS_RECEIVERS}'"
                 fi
 
                 az stack sub create \
@@ -250,6 +376,7 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
+                      # Build parameter overrides for pipeline parameters
                       PARAMS=""
                       if [ -n "${{ parameters.workloadAlias }}" ]; then
                         PARAMS="$PARAMS --parameters workloadAlias='${{ parameters.workloadAlias }}'"
@@ -269,11 +396,57 @@ stages:
                       if [ -n "${{ parameters.dataRetention }}" ]; then
                         PARAMS="$PARAMS --parameters dataRetention=${{ parameters.dataRetention }}"
                       fi
+                      if [ -n "${{ parameters.dailyQuotaGb }}" ]; then
+                        PARAMS="$PARAMS --parameters dailyQuotaGb=${{ parameters.dailyQuotaGb }}"
+                      fi
                       if [ -n "${{ parameters.owner }}" ]; then
                         PARAMS="$PARAMS --parameters owner='${{ parameters.owner }}'"
                       fi
                       if [ -n "${{ parameters.managedBy }}" ]; then
                         PARAMS="$PARAMS --parameters managedBy='${{ parameters.managedBy }}'"
+                      fi
+
+                      # Convert comma-separated email list from variable group to JSON array for Bicep
+                      if [ -n "$(actionGroupEmails)" ]; then
+                        EMAIL_RECEIVERS="["
+                        IFS=',' read -ra EMAILS <<< "$(actionGroupEmails)"
+                        FIRST=true
+                        for email in "${EMAILS[@]}"; do
+                          email=$(echo "$email" | xargs)
+                          if [ -n "$email" ]; then
+                            if [ "$FIRST" = true ]; then
+                              FIRST=false
+                            else
+                              EMAIL_RECEIVERS+=","
+                            fi
+                            EMAIL_RECEIVERS+="{\"name\":\"${email%%@*}\",\"emailAddress\":\"${email}\",\"useCommonAlertSchema\":true}"
+                          fi
+                        done
+                        EMAIL_RECEIVERS+="]"
+                        PARAMS="$PARAMS --parameters actionGroupEmailReceivers='${EMAIL_RECEIVERS}'"
+                      fi
+
+                      # Convert comma-separated SMS list from variable group to JSON array for Bicep
+                      if [ -n "$(actionGroupSmsNumbers)" ]; then
+                        SMS_RECEIVERS="["
+                        IFS=',' read -ra SMS_LIST <<< "$(actionGroupSmsNumbers)"
+                        FIRST=true
+                        for sms in "${SMS_LIST[@]}"; do
+                          sms=$(echo "$sms" | xargs)
+                          if [ -n "$sms" ]; then
+                            IFS=':' read -r country phone <<< "$sms"
+                            if [ -n "$country" ] && [ -n "$phone" ]; then
+                              if [ "$FIRST" = true ]; then
+                                FIRST=false
+                              else
+                                SMS_RECEIVERS+=","
+                              fi
+                              SMS_RECEIVERS+="{\"name\":\"SMS-${phone}\",\"countryCode\":\"${country}\",\"phoneNumber\":\"${phone}\"}"
+                            fi
+                          fi
+                        done
+                        SMS_RECEIVERS+="]"
+                        PARAMS="$PARAMS --parameters actionGroupSmsReceivers='${SMS_RECEIVERS}'"
                       fi
 
                       az stack sub create \
