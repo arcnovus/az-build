@@ -221,14 +221,12 @@ stages:
                   SMS_RECEIVERS+="]"
                 fi
 
-                # Write array parameters to a temp JSON file to avoid shell escaping issues
-                ARRAY_PARAMS_FILE=$(mktemp)
-                cat > "$ARRAY_PARAMS_FILE" << EOF
-                {
-                  "actionGroupEmailReceivers": { "value": ${EMAIL_RECEIVERS} },
-                  "actionGroupSmsReceivers": { "value": ${SMS_RECEIVERS} }
-                }
-                EOF
+                # Write array values to temp files (one value per file) to avoid shell escaping issues
+                # When using .bicepparam files, we pass arrays as: paramName=@file (where file contains just the JSON array)
+                EMAIL_FILE=$(mktemp)
+                SMS_FILE=$(mktemp)
+                echo "${EMAIL_RECEIVERS}" > "$EMAIL_FILE"
+                echo "${SMS_RECEIVERS}" > "$SMS_FILE"
 
                 az stack sub validate \
                   --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
@@ -236,12 +234,13 @@ stages:
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --parameters @"$ARRAY_PARAMS_FILE" \
+                  --parameters actionGroupEmailReceivers=@"$EMAIL_FILE" \
+                  --parameters actionGroupSmsReceivers=@"$SMS_FILE" \
                   --deny-settings-mode ${{ parameters.denySettingsMode }} \
                   --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                   $PARAMS
 
-                rm -f "$ARRAY_PARAMS_FILE"
+                rm -f "$EMAIL_FILE" "$SMS_FILE"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -339,28 +338,25 @@ stages:
                   SMS_RECEIVERS+="]"
                 fi
 
-                # Write array parameters to a temp JSON file to avoid shell escaping issues
-                ARRAY_PARAMS_FILE=$(mktemp)
-                cat > "$ARRAY_PARAMS_FILE" << EOF
-                {
-                  "actionGroupEmailReceivers": { "value": ${EMAIL_RECEIVERS} },
-                  "actionGroupSmsReceivers": { "value": ${SMS_RECEIVERS} }
-                }
-                EOF
+                # Write array values to temp files (one value per file) to avoid shell escaping issues
+                EMAIL_FILE=$(mktemp)
+                SMS_FILE=$(mktemp)
+                echo "${EMAIL_RECEIVERS}" > "$EMAIL_FILE"
+                echo "${SMS_RECEIVERS}" > "$SMS_FILE"
 
-                az stack sub create \
+                # Use az deployment sub what-if for what-if analysis
+                # (az stack sub create doesn't support --what-if)
+                az deployment sub what-if \
                   --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
                   --subscription "$(monitoringSubscriptionId)" \
                   --location $(deploymentLocation) \
                   --template-file $(templateFile) \
                   --parameters $(parametersFile) \
-                  --parameters @"$ARRAY_PARAMS_FILE" \
-                  --deny-settings-mode ${{ parameters.denySettingsMode }} \
-                  --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
-                  --what-if \
+                  --parameters actionGroupEmailReceivers=@"$EMAIL_FILE" \
+                  --parameters actionGroupSmsReceivers=@"$SMS_FILE" \
                   $PARAMS
 
-                rm -f "$ARRAY_PARAMS_FILE"
+                rm -f "$EMAIL_FILE" "$SMS_FILE"
 
   - stage: Deploy
     displayName: "Deploy Monitoring Deployment Stack"
@@ -464,14 +460,11 @@ stages:
                         SMS_RECEIVERS+="]"
                       fi
 
-                      # Write array parameters to a temp JSON file to avoid shell escaping issues
-                      ARRAY_PARAMS_FILE=$(mktemp)
-                      cat > "$ARRAY_PARAMS_FILE" << EOF
-                      {
-                        "actionGroupEmailReceivers": { "value": ${EMAIL_RECEIVERS} },
-                        "actionGroupSmsReceivers": { "value": ${SMS_RECEIVERS} }
-                      }
-                      EOF
+                      # Write array values to temp files (one value per file) to avoid shell escaping issues
+                      EMAIL_FILE=$(mktemp)
+                      SMS_FILE=$(mktemp)
+                      echo "${EMAIL_RECEIVERS}" > "$EMAIL_FILE"
+                      echo "${SMS_RECEIVERS}" > "$SMS_FILE"
 
                       az stack sub create \
                         --name "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}" \
@@ -479,10 +472,11 @@ stages:
                         --location $(deploymentLocation) \
                         --template-file $(templateFile) \
                         --parameters $(parametersFile) \
-                        --parameters @"$ARRAY_PARAMS_FILE" \
+                        --parameters actionGroupEmailReceivers=@"$EMAIL_FILE" \
+                        --parameters actionGroupSmsReceivers=@"$SMS_FILE" \
                         --deny-settings-mode ${{ parameters.denySettingsMode }} \
                         --action-on-unmanage ${{ parameters.actionOnUnmanage }} \
                         --yes \
                         $PARAMS
 
-                      rm -f "$ARRAY_PARAMS_FILE"
+                      rm -f "$EMAIL_FILE" "$SMS_FILE"
