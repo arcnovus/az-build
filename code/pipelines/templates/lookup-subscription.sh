@@ -1,42 +1,37 @@
 #!/usr/bin/env bash
 #
 # lookup-subscription.sh
+# Location: code/pipelines/templates/
 #
-# Looks up an existing Azure subscription by display name and returns its ID.
-# This script computes the subscription alias name from input parameters and
-# searches for a matching subscription.
+# Reusable script that looks up an existing Azure subscription by its alias name
+# (display name) and returns its ID.
 #
 # Usage:
-#   bash lookup-subscription.sh <workloadAlias> <environment> <locationCode> <instanceNumber>
+#   bash lookup-subscription.sh <subscriptionAliasName>
+#
+# Parameters:
+#   subscriptionAliasName - The subscription alias/display name to search for
 #
 # Output:
-#   - Sets Azure DevOps pipeline variable: EXISTING_SUBSCRIPTION_ID
-#   - If found: The subscription ID (GUID)
-#   - If not found: Empty string
+#   Sets Azure DevOps pipeline variables:
+#   - EXISTING_SUBSCRIPTION_ID: The subscription ID (GUID) if found, empty if not
+#   - SUBSCRIPTION_ALIAS_NAME: The subscription alias name that was searched
 #
 # Example:
-#   bash lookup-subscription.sh "hub" "prod" "cac" "001"
-#   # Looks for subscription named: subcr-hub-prod-cac-001
+#   bash lookup-subscription.sh "subcr-hub-prod-cac-001"
 #
 
 set -euo pipefail
 
 # Parameters
-WORKLOAD_ALIAS="${1:-}"
-ENVIRONMENT="${2:-}"
-LOCATION_CODE="${3:-}"
-INSTANCE_NUMBER="${4:-}"
+SUBSCRIPTION_ALIAS_NAME="${1:-}"
 
 # Validate required parameters
-if [[ -z "$WORKLOAD_ALIAS" || -z "$ENVIRONMENT" || -z "$LOCATION_CODE" || -z "$INSTANCE_NUMBER" ]]; then
-    echo "##[error]Missing required parameters."
-    echo "Usage: bash lookup-subscription.sh <workloadAlias> <environment> <locationCode> <instanceNumber>"
+if [[ -z "$SUBSCRIPTION_ALIAS_NAME" ]]; then
+    echo "##[error]Missing required parameter: subscriptionAliasName"
+    echo "Usage: bash lookup-subscription.sh <subscriptionAliasName>"
     exit 1
 fi
-
-# Compute the subscription alias name using the same convention as the Bicep
-# Convention: subcr-<workloadAlias>-<environment>-<locationcode>-<instance number>
-SUBSCRIPTION_ALIAS_NAME="subcr-${WORKLOAD_ALIAS}-${ENVIRONMENT}-${LOCATION_CODE}-${INSTANCE_NUMBER}"
 
 echo "Looking for existing subscription with name: ${SUBSCRIPTION_ALIAS_NAME}"
 
@@ -60,5 +55,5 @@ else
     echo "##vso[task.setvariable variable=EXISTING_SUBSCRIPTION_ID;isOutput=true]"
 fi
 
-# Also output the computed alias name for reference
+# Also output the alias name for reference
 echo "##vso[task.setvariable variable=SUBSCRIPTION_ALIAS_NAME;isOutput=true]${SUBSCRIPTION_ALIAS_NAME}"

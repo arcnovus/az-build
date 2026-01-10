@@ -53,7 +53,9 @@ variables:
   - name: parametersFile
     value: "$(bicepPath)/sub-vending.bicepparam"
   - name: scriptsPath
-    value: "code/pipelines/scripts"
+    value: "code/pipelines/sub-vending"
+  - name: templatesPath
+    value: "code/pipelines/templates"
 
 parameters:
   - name: projectName
@@ -136,10 +138,14 @@ stages:
           - checkout: self
 
           - script: |
-              bash $(scriptsPath)/validate-environment.sh \
+              bash $(templatesPath)/compute-resource-alias.sh \
+                "subcr" \
+                "${{ parameters.workloadAlias }}" \
                 "${{ parameters.environment }}" \
-                "$(environments)"
-            displayName: "Validate Environment Parameter"
+                "${{ parameters.locationCode }}" \
+                "${{ parameters.instanceNumber }}"
+            name: ComputeAlias
+            displayName: "Compute Subscription Alias"
 
           - task: AzureCLI@2
             name: LookupSubscription
@@ -149,11 +155,8 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/lookup-subscription.sh \
-                  "${{ parameters.workloadAlias }}" \
-                  "${{ parameters.environment }}" \
-                  "${{ parameters.locationCode }}" \
-                  "${{ parameters.instanceNumber }}"
+                bash $(templatesPath)/lookup-subscription.sh \
+                  "$(ComputeAlias.RESOURCE_ALIAS)"
 
           - task: AzureCLI@2
             displayName: "Validate Permissions for Subscription Creation"
@@ -162,7 +165,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/validate-permissions.sh \
+                bash $(scriptsPath)/sv-validate-permissions.sh \
                   "$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
 
           - task: AzureCLI@2
@@ -173,7 +176,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/construct-billing-scope.sh \
+                bash $(scriptsPath)/sv-construct-billing-scope.sh \
                   "$(billingAccountId)" \
                   "$(invoiceSectionId)" \
                   "$(billingProfileId)" \
@@ -186,7 +189,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/validate-deployment.sh \
+                bash $(scriptsPath)/sv-validate-deployment.sh \
                   "$(templateFile)" \
                   "$(parametersFile)" \
                   "$(deploymentLocation)" \
@@ -219,6 +222,16 @@ stages:
         steps:
           - checkout: self
 
+          - script: |
+              bash $(templatesPath)/compute-resource-alias.sh \
+                "subcr" \
+                "${{ parameters.workloadAlias }}" \
+                "${{ parameters.environment }}" \
+                "${{ parameters.locationCode }}" \
+                "${{ parameters.instanceNumber }}"
+            name: ComputeAlias
+            displayName: "Compute Subscription Alias"
+
           - task: AzureCLI@2
             name: LookupSubscription
             displayName: "Lookup Existing Subscription"
@@ -227,11 +240,8 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/lookup-subscription.sh \
-                  "${{ parameters.workloadAlias }}" \
-                  "${{ parameters.environment }}" \
-                  "${{ parameters.locationCode }}" \
-                  "${{ parameters.instanceNumber }}"
+                bash $(templatesPath)/lookup-subscription.sh \
+                  "$(ComputeAlias.RESOURCE_ALIAS)"
 
           - task: AzureCLI@2
             name: ConstructBillingScope
@@ -241,7 +251,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/construct-billing-scope.sh \
+                bash $(scriptsPath)/sv-construct-billing-scope.sh \
                   "$(billingAccountId)" \
                   "$(invoiceSectionId)" \
                   "$(billingProfileId)" \
@@ -254,7 +264,7 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                bash $(scriptsPath)/whatif-deployment.sh \
+                bash $(scriptsPath)/sv-whatif-deployment.sh \
                   "$(templateFile)" \
                   "$(parametersFile)" \
                   "$(deploymentLocation)" \
@@ -293,6 +303,16 @@ stages:
               steps:
                 - checkout: self
 
+                - script: |
+                    bash $(templatesPath)/compute-resource-alias.sh \
+                      "subcr" \
+                      "${{ parameters.workloadAlias }}" \
+                      "${{ parameters.environment }}" \
+                      "${{ parameters.locationCode }}" \
+                      "${{ parameters.instanceNumber }}"
+                  name: ComputeAlias
+                  displayName: "Compute Subscription Alias"
+
                 - task: AzureCLI@2
                   name: LookupSubscription
                   displayName: "Lookup Existing Subscription"
@@ -301,11 +321,8 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      bash $(scriptsPath)/lookup-subscription.sh \
-                        "${{ parameters.workloadAlias }}" \
-                        "${{ parameters.environment }}" \
-                        "${{ parameters.locationCode }}" \
-                        "${{ parameters.instanceNumber }}"
+                      bash $(templatesPath)/lookup-subscription.sh \
+                        "$(ComputeAlias.RESOURCE_ALIAS)"
 
                 - task: AzureCLI@2
                   displayName: "Validate Permissions for Subscription Creation"
@@ -314,7 +331,7 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      bash $(scriptsPath)/validate-permissions.sh \
+                      bash $(scriptsPath)/sv-validate-permissions.sh \
                         "$(LookupSubscription.EXISTING_SUBSCRIPTION_ID)"
 
                 - task: AzureCLI@2
@@ -325,7 +342,7 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      bash $(scriptsPath)/construct-billing-scope.sh \
+                      bash $(scriptsPath)/sv-construct-billing-scope.sh \
                         "$(billingAccountId)" \
                         "$(invoiceSectionId)" \
                         "$(billingProfileId)" \
@@ -338,7 +355,7 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      bash $(scriptsPath)/deploy-subscription-vending.sh \
+                      bash $(scriptsPath)/sv-deploy.sh \
                         "$(templateFile)" \
                         "$(parametersFile)" \
                         "$(deploymentLocation)" \
