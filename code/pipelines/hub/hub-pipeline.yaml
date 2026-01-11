@@ -36,6 +36,7 @@ pool:
 
 variables:
   - group: common-variables
+  - group: hub-variables
   - name: bicepPath
     value: "code/bicep/hub"
   - name: templateFile
@@ -48,10 +49,6 @@ variables:
     value: "stack-${{ parameters.workloadAlias }}-${{ parameters.environment }}-${{ parameters.locationCode }}-${{ parameters.instanceNumber }}"
 
 parameters:
-  - name: subscriptionId
-    displayName: "Hub Subscription ID"
-    type: string
-    default: ""
   - name: workloadAlias
     displayName: "Workload Alias"
     type: string
@@ -80,28 +77,10 @@ parameters:
     displayName: "Azure Region"
     type: string
     default: "canadacentral"
-  - name: privateDnsZoneName
-    displayName: "Private DNS Zone Name"
-    type: string
-    default: "internal.organization.com"
   - name: hubVnetAddressSpace
     displayName: "Hub VNet Address Space"
     type: string
     default: "10.0.0.0/16"
-  - name: logAnalyticsWorkspaceResourceId
-    displayName: "Log Analytics Workspace Resource ID (from monitoring infrastructure)"
-    type: string
-  - name: owner
-    displayName: "Owner (e.g. a group mailbox like platform-team@example.com)"
-    type: string
-  - name: managedBy
-    displayName: "Managed By"
-    type: string
-    default: "Bicep"
-  - name: avnmManagementGroupId
-    displayName: "AVNM Management Group ID"
-    type: string
-    default: "mg-connectivity"
   # Optional resource flags
   - name: enableAppGatewayWAF
     displayName: "Enable Application Gateway with WAF"
@@ -151,10 +130,6 @@ parameters:
     values:
       - Standard
       - Premium
-  - name: keyVaultAdminPrincipalId
-    displayName: "Key Vault Admin Principal ID (Object ID for Key Vault Administrator role)"
-    type: string
-    default: ""
   # Deployment Stack settings
   - name: denySettingsMode
     displayName: "Deny Settings Mode"
@@ -203,7 +178,7 @@ stages:
               scriptLocation: "inlineScript"
               inlineScript: |
                 bash $(scriptsPath)/hub-validate-stack.sh \
-                  "${{ parameters.subscriptionId }}" \
+                  "$(hubSubscriptionId)" \
                   "$(templateFile)" \
                   "$(parametersFile)" \
                   "$(deploymentLocation)" \
@@ -215,12 +190,12 @@ stages:
                   "${{ parameters.locationCode }}" \
                   "${{ parameters.instanceNumber }}" \
                   "${{ parameters.location }}" \
-                  "${{ parameters.privateDnsZoneName }}" \
+                  "$(privateDnsZoneName)" \
                   "${{ parameters.hubVnetAddressSpace }}" \
-                  "${{ parameters.logAnalyticsWorkspaceResourceId }}" \
-                  "${{ parameters.owner }}" \
-                  "${{ parameters.managedBy }}" \
-                  "${{ parameters.avnmManagementGroupId }}" \
+                  "$(logAnalyticsWorkspaceResourceId)" \
+                  "$(defaultOwner)" \
+                  "$(managedBy)" \
+                  "$(avnmManagementGroupId)" \
                   "${{ parameters.enableAppGatewayWAF }}" \
                   "${{ parameters.enableFrontDoor }}" \
                   "${{ parameters.enableVpnGateway }}" \
@@ -232,7 +207,7 @@ stages:
                   "${{ parameters.ipamPoolDescription }}" \
                   "${{ parameters.vpnClientAddressPoolPrefix }}" \
                   "${{ parameters.azureFirewallTier }}" \
-                  "${{ parameters.keyVaultAdminPrincipalId }}"
+                  "$(keyVaultAdminPrincipalId)"
 
   - stage: Preview
     displayName: "Preview Stack State"
@@ -258,7 +233,7 @@ stages:
               scriptLocation: "inlineScript"
               inlineScript: |
                 bash $(scriptsPath)/hub-preview-stack.sh \
-                  "${{ parameters.subscriptionId }}" \
+                  "$(hubSubscriptionId)" \
                   "$(stackName)"
 
   - stage: Deploy
@@ -291,7 +266,7 @@ stages:
                     scriptLocation: "inlineScript"
                     inlineScript: |
                       bash $(scriptsPath)/hub-deploy-stack.sh \
-                        "${{ parameters.subscriptionId }}" \
+                        "$(hubSubscriptionId)" \
                         "$(templateFile)" \
                         "$(parametersFile)" \
                         "$(deploymentLocation)" \
@@ -303,12 +278,12 @@ stages:
                         "${{ parameters.locationCode }}" \
                         "${{ parameters.instanceNumber }}" \
                         "${{ parameters.location }}" \
-                        "${{ parameters.privateDnsZoneName }}" \
+                        "$(privateDnsZoneName)" \
                         "${{ parameters.hubVnetAddressSpace }}" \
-                        "${{ parameters.logAnalyticsWorkspaceResourceId }}" \
-                        "${{ parameters.owner }}" \
-                        "${{ parameters.managedBy }}" \
-                        "${{ parameters.avnmManagementGroupId }}" \
+                        "$(logAnalyticsWorkspaceResourceId)" \
+                        "$(defaultOwner)" \
+                        "$(managedBy)" \
+                        "$(avnmManagementGroupId)" \
                         "${{ parameters.enableAppGatewayWAF }}" \
                         "${{ parameters.enableFrontDoor }}" \
                         "${{ parameters.enableVpnGateway }}" \
@@ -320,4 +295,4 @@ stages:
                         "${{ parameters.ipamPoolDescription }}" \
                         "${{ parameters.vpnClientAddressPoolPrefix }}" \
                         "${{ parameters.azureFirewallTier }}" \
-                        "${{ parameters.keyVaultAdminPrincipalId }}"
+                        "$(keyVaultAdminPrincipalId)"
