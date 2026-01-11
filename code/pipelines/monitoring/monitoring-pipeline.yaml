@@ -126,7 +126,7 @@ stages:
     displayName: "Validate Deployment Stack"
     # Runs for: Validation, Preview, Deploy (all options)
     jobs:
-      - template: templates/jobs/validate-environment-job.yaml
+      - template: ../templates/jobs/validate-environment-job.yaml
         parameters:
           environment: ${{ parameters.environment }}
       - job: ValidateStack
