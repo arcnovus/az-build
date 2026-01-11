@@ -159,6 +159,7 @@ parameters:
       - Validation
       - WhatIf
       - Deploy
+      - Remove
 
 stages:
   - stage: Validate
@@ -307,3 +308,34 @@ stages:
                         "${{ parameters.enableIpamAllocation }}" \
                         "${{ parameters.hubAvnmName }}" \
                         "${{ parameters.hubIpamPoolName }}"
+
+  - stage: Remove
+    displayName: "Remove Spoke Networking Deployment Stack"
+    dependsOn:
+      - Validate
+    # Runs for: Remove only
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        eq('${{ parameters.deploymentStage }}', 'Remove')
+      )
+    jobs:
+      - deployment: RemoveSpokeStack
+        displayName: "Remove Spoke Stack"
+        environment: "${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Delete Spoke Networking Deployment Stack"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      bash $(scriptsPath)/spoke-delete-stack.sh \
+                        "${{ parameters.subscriptionId }}" \
+                        "$(stackName)"

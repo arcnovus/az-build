@@ -135,6 +135,7 @@ parameters:
       - Validation
       - WhatIf
       - Deploy
+      - Remove
 
 stages:
   - stage: Validate
@@ -280,3 +281,34 @@ stages:
                         "${{ parameters.enableScaleToZero }}" \
                         "${{ parameters.azureDevOpsOrganizationUrl }}" \
                         "${{ parameters.azureDevOpsProjectNames }}"
+
+  - stage: Remove
+    displayName: "Remove CloudOps Deployment Stack"
+    dependsOn:
+      - Validate
+    # Runs for: Remove only
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        eq('${{ parameters.deploymentStage }}', 'Remove')
+      )
+    jobs:
+      - deployment: RemoveCloudOpsStack
+        displayName: "Remove CloudOps Stack"
+        environment: "${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Delete CloudOps Deployment Stack"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      bash $(scriptsPath)/co-delete-stack.sh \
+                        "${{ parameters.subscriptionId }}" \
+                        "$(stackName)"

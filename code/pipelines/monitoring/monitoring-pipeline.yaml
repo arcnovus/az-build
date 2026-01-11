@@ -120,6 +120,7 @@ parameters:
       - Validation
       - Preview
       - Deploy
+      - Remove
 
 stages:
   - stage: Validate
@@ -239,3 +240,34 @@ stages:
                         "${{ parameters.managedBy }}" \
                         "$(actionGroupEmails)" \
                         "$(actionGroupSmsNumbers)"
+
+  - stage: Remove
+    displayName: "Remove Monitoring Deployment Stack"
+    dependsOn:
+      - Validate
+    # Runs for: Remove only
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        eq('${{ parameters.deploymentStage }}', 'Remove')
+      )
+    jobs:
+      - deployment: RemoveMonitoringStack
+        displayName: "Remove Monitoring Stack"
+        environment: "${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Delete Monitoring Deployment Stack"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      bash $(scriptsPath)/mon-delete-stack.sh \
+                        "$(monitoringSubscriptionId)" \
+                        "$(stackName)"

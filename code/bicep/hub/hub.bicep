@@ -111,6 +111,10 @@ var ddosProtectionPlanName = 'ddos-${workloadAlias}-${environment}-${locationCod
 var keyVaultName = 'kv-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 var dnsResolverName = 'dnspr-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 var ipamPoolName = 'ipam-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var ipamStaticCidrName = 'ipamsc-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var privateDnsZoneVnetLinkName = 'pdnslnk-${workloadAlias}-to-${hubVnetName}'
+var dnsResolverInboundEndpointName = 'in-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
+var appGatewayWafPolicyName = 'wafp-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 // Common tags
 var commonTags = {
@@ -345,7 +349,7 @@ module hubVnetIpamAllocation './ipam-static-cidr.bicep' = if (enableIpamPool) {
   params: {
     networkManagerName: avnmName
     ipamPoolName: ipamPoolName
-    staticCidrName: '${hubVnetName}-allocation'
+    staticCidrName: ipamStaticCidrName
     addressPrefixes: [
       hubVnetAddressSpace
     ]
@@ -367,7 +371,7 @@ module privateDnsZoneVnetLink 'br/public:avm/res/network/private-dns-zone:0.8.0'
     name: privateDnsZoneName
     virtualNetworkLinks: [
       {
-        name: '${hubVnetName}-link'
+        name: privateDnsZoneVnetLinkName
         virtualNetworkResourceId: hubVnet.outputs.resourceId
         registrationEnabled: true
       }
@@ -392,7 +396,7 @@ module dnsResolver 'br/public:avm/res/network/dns-resolver:0.5.0' = if (enableDn
     virtualNetworkResourceId: hubVnet.outputs.resourceId
     inboundEndpoints: [
       {
-        name: 'inbound-endpoint'
+        name: dnsResolverInboundEndpointName
         subnetResourceId: '${hubVnet.outputs.resourceId}/subnets/DnsResolverInbound'
       }
     ]
@@ -494,8 +498,6 @@ module azureFirewallPip 'br/public:avm/res/network/public-ip-address:0.9.0' = if
 // ============================================================================
 // OPTIONAL: APPLICATION GATEWAY WAF POLICY
 // ============================================================================
-
-var appGatewayWafPolicyName = 'wafp-${workloadAlias}-${environment}-${locationCode}-${instanceNumber}'
 
 module appGatewayWafPolicy 'br/public:avm/res/network/application-gateway-web-application-firewall-policy:0.2.0' = if (enableAppGatewayWAF) {
   name: 'deploy-${appGatewayWafPolicyName}'

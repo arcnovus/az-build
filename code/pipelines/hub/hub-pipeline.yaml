@@ -155,6 +155,7 @@ parameters:
       - Validation
       - Preview
       - Deploy
+      - Remove
 
 stages:
   - stage: Validate
@@ -296,3 +297,34 @@ stages:
                         "${{ parameters.vpnClientAddressPoolPrefix }}" \
                         "${{ parameters.azureFirewallTier }}" \
                         "$(keyVaultAdminPrincipalId)"
+
+  - stage: Remove
+    displayName: "Remove Hub Deployment Stack"
+    dependsOn:
+      - Validate
+    # Runs for: Remove only
+    condition: |
+      and(
+        eq(dependencies.Validate.result, 'Succeeded'),
+        eq('${{ parameters.deploymentStage }}', 'Remove')
+      )
+    jobs:
+      - deployment: RemoveHubStack
+        displayName: "Remove Hub Stack"
+        environment: "${{ parameters.environment }}"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+
+                - task: AzureCLI@2
+                  displayName: "Delete Hub Deployment Stack"
+                  inputs:
+                    azureSubscription: "$(azureServiceConnection)"
+                    scriptType: "bash"
+                    scriptLocation: "inlineScript"
+                    inlineScript: |
+                      bash $(scriptsPath)/hub-delete-stack.sh \
+                        "$(hubSubscriptionId)" \
+                        "$(stackName)"
