@@ -238,13 +238,10 @@ module avnm 'br/public:avm/res/network/network-manager:0.5.0' = {
   params: {
     name: avnmName
     location: location
-    networkManagerScopeAccesses: concat(
-      [
-        'Connectivity'
-        'SecurityAdmin'
-      ],
-      enableIpamPool ? ['IPAM'] : []
-    )
+    networkManagerScopeAccesses: [
+      'Connectivity'
+      'SecurityAdmin'
+    ]
     networkManagerScopes: {
       managementGroups: [
         '/providers/Microsoft.Management/managementGroups/${avnmManagementGroupId}'
