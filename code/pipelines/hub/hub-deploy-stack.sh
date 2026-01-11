@@ -76,63 +76,64 @@ VPN_CLIENT_ADDRESS_POOL_PREFIX="${28:-}"
 AZURE_FIREWALL_TIER="${29:-}"
 KEY_VAULT_ADMIN_PRINCIPAL_ID="${30:-}"
 
-PARAMS=""
+# Build parameters array for additional parameters (override .bicepparam defaults)
+PARAMS_ARRAY=()
 if [ -n "$WORKLOAD_ALIAS" ]; then
-  PARAMS="$PARAMS --parameters workloadAlias='$WORKLOAD_ALIAS'"
+  PARAMS_ARRAY+=(--parameters "workloadAlias=$WORKLOAD_ALIAS")
 fi
 if [ -n "$ENVIRONMENT" ]; then
-  PARAMS="$PARAMS --parameters environment='$ENVIRONMENT'"
+  PARAMS_ARRAY+=(--parameters "environment=$ENVIRONMENT")
 fi
 if [ -n "$LOCATION_CODE" ]; then
-  PARAMS="$PARAMS --parameters locationCode='$LOCATION_CODE'"
+  PARAMS_ARRAY+=(--parameters "locationCode=$LOCATION_CODE")
 fi
 if [ -n "$INSTANCE_NUMBER" ]; then
-  PARAMS="$PARAMS --parameters instanceNumber='$INSTANCE_NUMBER'"
+  PARAMS_ARRAY+=(--parameters "instanceNumber=$INSTANCE_NUMBER")
 fi
 if [ -n "$LOCATION" ]; then
-  PARAMS="$PARAMS --parameters location='$LOCATION'"
+  PARAMS_ARRAY+=(--parameters "location=$LOCATION")
 fi
 if [ -n "$PRIVATE_DNS_ZONE_NAME" ]; then
-  PARAMS="$PARAMS --parameters privateDnsZoneName='$PRIVATE_DNS_ZONE_NAME'"
+  PARAMS_ARRAY+=(--parameters "privateDnsZoneName=$PRIVATE_DNS_ZONE_NAME")
 fi
 if [ -n "$HUB_VNET_ADDRESS_SPACE" ]; then
-  PARAMS="$PARAMS --parameters hubVnetAddressSpace='$HUB_VNET_ADDRESS_SPACE'"
+  PARAMS_ARRAY+=(--parameters "hubVnetAddressSpace=$HUB_VNET_ADDRESS_SPACE")
 fi
 if [ -n "$LOG_ANALYTICS_WORKSPACE_RESOURCE_ID" ]; then
-  PARAMS="$PARAMS --parameters logAnalyticsWorkspaceResourceId='$LOG_ANALYTICS_WORKSPACE_RESOURCE_ID'"
+  PARAMS_ARRAY+=(--parameters "logAnalyticsWorkspaceResourceId=$LOG_ANALYTICS_WORKSPACE_RESOURCE_ID")
 fi
 if [ -n "$OWNER" ]; then
-  PARAMS="$PARAMS --parameters owner='$OWNER'"
+  PARAMS_ARRAY+=(--parameters "owner=$OWNER")
 fi
 if [ -n "$MANAGED_BY" ]; then
-  PARAMS="$PARAMS --parameters managedBy='$MANAGED_BY'"
+  PARAMS_ARRAY+=(--parameters "managedBy=$MANAGED_BY")
 fi
 if [ -n "$AVNM_MANAGEMENT_GROUP_ID" ]; then
-  PARAMS="$PARAMS --parameters avnmManagementGroupId='$AVNM_MANAGEMENT_GROUP_ID'"
+  PARAMS_ARRAY+=(--parameters "avnmManagementGroupId=$AVNM_MANAGEMENT_GROUP_ID")
 fi
-# Optional resource flags
-PARAMS="$PARAMS --parameters enableAppGatewayWAF=$ENABLE_APP_GATEWAY_WAF"
-PARAMS="$PARAMS --parameters enableFrontDoor=$ENABLE_FRONT_DOOR"
-PARAMS="$PARAMS --parameters enableVpnGateway=$ENABLE_VPN_GATEWAY"
-PARAMS="$PARAMS --parameters enableAzureFirewall=$ENABLE_AZURE_FIREWALL"
-PARAMS="$PARAMS --parameters enableDDoSProtection=$ENABLE_DDOS_PROTECTION"
-PARAMS="$PARAMS --parameters enableDnsResolver=$ENABLE_DNS_RESOLVER"
-PARAMS="$PARAMS --parameters enableIpamPool=$ENABLE_IPAM_POOL"
+# Optional resource flags (booleans must be lowercase true/false)
+PARAMS_ARRAY+=(--parameters "enableAppGatewayWAF=$(echo "$ENABLE_APP_GATEWAY_WAF" | tr '[:upper:]' '[:lower:]')")
+PARAMS_ARRAY+=(--parameters "enableFrontDoor=$(echo "$ENABLE_FRONT_DOOR" | tr '[:upper:]' '[:lower:]')")
+PARAMS_ARRAY+=(--parameters "enableVpnGateway=$(echo "$ENABLE_VPN_GATEWAY" | tr '[:upper:]' '[:lower:]')")
+PARAMS_ARRAY+=(--parameters "enableAzureFirewall=$(echo "$ENABLE_AZURE_FIREWALL" | tr '[:upper:]' '[:lower:]')")
+PARAMS_ARRAY+=(--parameters "enableDDoSProtection=$(echo "$ENABLE_DDOS_PROTECTION" | tr '[:upper:]' '[:lower:]')")
+PARAMS_ARRAY+=(--parameters "enableDnsResolver=$(echo "$ENABLE_DNS_RESOLVER" | tr '[:upper:]' '[:lower:]')")
+PARAMS_ARRAY+=(--parameters "enableIpamPool=$(echo "$ENABLE_IPAM_POOL" | tr '[:upper:]' '[:lower:]')")
 if [ -n "$IPAM_POOL_ADDRESS_SPACE" ]; then
-  PARAMS="$PARAMS --parameters ipamPoolAddressSpace='$IPAM_POOL_ADDRESS_SPACE'"
+  PARAMS_ARRAY+=(--parameters "ipamPoolAddressSpace=$IPAM_POOL_ADDRESS_SPACE")
 fi
 if [ -n "$IPAM_POOL_DESCRIPTION" ]; then
-  PARAMS="$PARAMS --parameters ipamPoolDescription='$IPAM_POOL_DESCRIPTION'"
+  PARAMS_ARRAY+=(--parameters "ipamPoolDescription=$IPAM_POOL_DESCRIPTION")
 fi
 # Optional resource configuration
 if [ -n "$VPN_CLIENT_ADDRESS_POOL_PREFIX" ]; then
-  PARAMS="$PARAMS --parameters vpnClientAddressPoolPrefix='$VPN_CLIENT_ADDRESS_POOL_PREFIX'"
+  PARAMS_ARRAY+=(--parameters "vpnClientAddressPoolPrefix=$VPN_CLIENT_ADDRESS_POOL_PREFIX")
 fi
 if [ -n "$AZURE_FIREWALL_TIER" ]; then
-  PARAMS="$PARAMS --parameters azureFirewallTier='$AZURE_FIREWALL_TIER'"
+  PARAMS_ARRAY+=(--parameters "azureFirewallTier=$AZURE_FIREWALL_TIER")
 fi
 if [ -n "$KEY_VAULT_ADMIN_PRINCIPAL_ID" ]; then
-  PARAMS="$PARAMS --parameters keyVaultAdminPrincipalId='$KEY_VAULT_ADMIN_PRINCIPAL_ID'"
+  PARAMS_ARRAY+=(--parameters "keyVaultAdminPrincipalId=$KEY_VAULT_ADMIN_PRINCIPAL_ID")
 fi
 
 az stack sub create \
@@ -144,4 +145,4 @@ az stack sub create \
   --deny-settings-mode "$DENY_SETTINGS_MODE" \
   --action-on-unmanage "$ACTION_ON_UNMANAGE" \
   --yes \
-  $PARAMS
+  "${PARAMS_ARRAY[@]}"
