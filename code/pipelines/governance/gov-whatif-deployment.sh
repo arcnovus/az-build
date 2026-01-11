@@ -35,6 +35,7 @@ OWNER="${7:-}"
 MANAGED_BY="${8:-}"
 ENABLE_MCSB="${9:-}"
 ENABLE_CANADA_PBMM="${10:-}"
+ENFORCEMENT_MODE="${11:-}"
 
 az deployment mg what-if \
   --management-group-id "$MANAGEMENT_GROUP_ID" \
@@ -46,4 +47,5 @@ az deployment mg what-if \
   --parameters owner="$OWNER" \
   --parameters managedBy="$MANAGED_BY" \
   --parameters enableMCSB=$ENABLE_MCSB \
-  --parameters enableCanadaPBMM=$ENABLE_CANADA_PBMM
+  --parameters enableCanadaPBMM=$ENABLE_CANADA_PBMM \
+  --parameters enforcementMode=$ENFORCEMENT_MODE

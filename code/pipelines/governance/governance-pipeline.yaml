@@ -91,6 +91,13 @@ parameters:
     displayName: "Managed By"
     type: string
     default: "$(managedBy)"
+  - name: enforcementMode
+    displayName: "Enforcement Mode"
+    type: string
+    default: "DoNotEnforce"
+    values:
+      - DoNotEnforce
+      - Default
   - name: enableMCSB
     displayName: "Enable Microsoft Cloud Security Benchmark"
     type: boolean
@@ -139,7 +146,8 @@ stages:
                   "${{ parameters.owner }}" \
                   "${{ parameters.managedBy }}" \
                   "${{ parameters.enableMCSB }}" \
-                  "${{ parameters.enableCanadaPBMM }}"
+                  "${{ parameters.enableCanadaPBMM }}" \
+                  "${{ parameters.enforcementMode }}"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -174,7 +182,8 @@ stages:
                   "${{ parameters.owner }}" \
                   "${{ parameters.managedBy }}" \
                   "${{ parameters.enableMCSB }}" \
-                  "${{ parameters.enableCanadaPBMM }}"
+                  "${{ parameters.enableCanadaPBMM }}" \
+                  "${{ parameters.enforcementMode }}"
 
   - stage: Deploy
     displayName: "Deploy Governance Policies"
@@ -216,4 +225,5 @@ stages:
                         "${{ parameters.owner }}" \
                         "${{ parameters.managedBy }}" \
                         "${{ parameters.enableMCSB }}" \
-                        "${{ parameters.enableCanadaPBMM }}"
+                        "${{ parameters.enableCanadaPBMM }}" \
+                        "${{ parameters.enforcementMode }}"

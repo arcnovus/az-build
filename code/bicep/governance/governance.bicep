@@ -18,6 +18,13 @@ param enableMCSB bool = true
 @description('Enable Canada Federal PBMM policy assignment')
 param enableCanadaPBMM bool = true
 
+@description('The enforcement mode for the policy assignment. ("DoNotEnforce", "Default")')
+@allowed([
+  'DoNotEnforce'
+  'Default'
+])
+param enforcementMode string = 'DoNotEnforce'
+
 // Built-in Policy Initiative IDs
 var mcsbInitiativeId = '/providers/Microsoft.Authorization/policySetDefinitions/1f3afdf9-d0c9-4c3d-847f-89da613e70a8'
 var canadaPbmmInitiativeId = '/providers/Microsoft.Authorization/policySetDefinitions/4c4a5f27-de81-430b-b4e5-9cbd50595a87'

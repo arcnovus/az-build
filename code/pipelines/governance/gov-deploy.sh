@@ -37,6 +37,7 @@ OWNER="${8:-}"
 MANAGED_BY="${9:-}"
 ENABLE_MCSB="${10:-}"
 ENABLE_CANADA_PBMM="${11:-}"
+ENFORCEMENT_MODE="${12:-}"
 
 az deployment mg create \
   --name "$DEPLOYMENT_NAME" \
@@ -49,4 +50,5 @@ az deployment mg create \
   --parameters owner="$OWNER" \
   --parameters managedBy="$MANAGED_BY" \
   --parameters enableMCSB=$ENABLE_MCSB \
-  --parameters enableCanadaPBMM=$ENABLE_CANADA_PBMM
+  --parameters enableCanadaPBMM=$ENABLE_CANADA_PBMM \
+  --parameters enforcementMode=$ENFORCEMENT_MODE
