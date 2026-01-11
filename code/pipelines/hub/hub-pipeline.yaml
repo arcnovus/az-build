@@ -327,4 +327,5 @@ stages:
                     inlineScript: |
                       bash $(scriptsPath)/hub-delete-stack.sh \
                         "$(hubSubscriptionId)" \
-                        "$(stackName)"
+                        "$(stackName)" \
+                        "${{ parameters.actionOnUnmanage }}"

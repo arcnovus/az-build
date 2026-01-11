@@ -311,4 +311,5 @@ stages:
                     inlineScript: |
                       bash $(scriptsPath)/co-delete-stack.sh \
                         "${{ parameters.subscriptionId }}" \
-                        "$(stackName)"
+                        "$(stackName)" \
+                        "${{ parameters.actionOnUnmanage }}"

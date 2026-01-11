@@ -10,7 +10,8 @@
 # Usage:
 #   bash dc-delete-stack.sh \
 #     <subscriptionId> \
-#     <stackName>
+#     <stackName> \
+#     <actionOnUnmanage>
 #
 # Exit codes:
 #   0 - Deletion succeeded
@@ -21,6 +22,7 @@ set -euo pipefail
 # Parameters
 SUBSCRIPTION_ID="${1:-}"
 STACK_NAME="${2:-}"
+ACTION_ON_UNMANAGE="${3:-detachAll}"
 
 # Validate required parameters
 if [ -z "$SUBSCRIPTION_ID" ]; then
@@ -38,6 +40,7 @@ echo "Deleting DevCenter Deployment Stack"
 echo "=============================================="
 echo "Subscription ID: $SUBSCRIPTION_ID"
 echo "Stack Name: $STACK_NAME"
+echo "Action on Unmanage: $ACTION_ON_UNMANAGE"
 echo "=============================================="
 
 # Check if the stack exists
@@ -59,6 +62,7 @@ echo "Deleting stack..."
 az stack sub delete \
   --name "$STACK_NAME" \
   --subscription "$SUBSCRIPTION_ID" \
+  --action-on-unmanage "$ACTION_ON_UNMANAGE" \
   --yes
 
 echo ""

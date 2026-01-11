@@ -338,4 +338,5 @@ stages:
                     inlineScript: |
                       bash $(scriptsPath)/spoke-delete-stack.sh \
                         "${{ parameters.subscriptionId }}" \
-                        "$(stackName)"
+                        "$(stackName)" \
+                        "${{ parameters.actionOnUnmanage }}"

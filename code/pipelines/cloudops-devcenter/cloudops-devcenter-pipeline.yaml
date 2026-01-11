@@ -262,4 +262,5 @@ stages:
                     inlineScript: |
                       bash $(scriptsPath)/dc-delete-stack.sh \
                         "${{ parameters.subscriptionId }}" \
-                        "$(stackName)"
+                        "$(stackName)" \
+                        "${{ parameters.actionOnUnmanage }}"

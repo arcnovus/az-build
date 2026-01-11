@@ -270,4 +270,5 @@ stages:
                     inlineScript: |
                       bash $(scriptsPath)/mon-delete-stack.sh \
                         "$(monitoringSubscriptionId)" \
-                        "$(stackName)"
+                        "$(stackName)" \
+                        "${{ parameters.actionOnUnmanage }}"
