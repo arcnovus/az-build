@@ -52,6 +52,8 @@ variables:
     value: "$(bicepPath)/mg-hierarchy.bicep"
   - name: parametersFile
     value: "$(bicepPath)/mg-hierarchy.bicepparam"
+  - name: scriptsPath
+    value: "code/pipelines/mg-hierarchy"
 
 parameters:
   - name: deploymentStage
@@ -80,13 +82,13 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                az deployment tenant validate \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  --parameters tenantRootManagementGroupId=$(azureTenantId) \
-                  --parameters orgName="$(orgName)" \
-                  --parameters orgDisplayName="$(orgDisplayName)"
+                bash $(scriptsPath)/mgh-validate-deployment.sh \
+                  "$(templateFile)" \
+                  "$(parametersFile)" \
+                  "$(deploymentLocation)" \
+                  "$(azureTenantId)" \
+                  "$(orgName)" \
+                  "$(orgDisplayName)"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -111,13 +113,13 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                az deployment tenant what-if \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  --parameters tenantRootManagementGroupId=$(azureTenantId) \
-                  --parameters orgName="$(orgName)" \
-                  --parameters orgDisplayName="$(orgDisplayName)"
+                bash $(scriptsPath)/mgh-whatif-deployment.sh \
+                  "$(templateFile)" \
+                  "$(parametersFile)" \
+                  "$(deploymentLocation)" \
+                  "$(azureTenantId)" \
+                  "$(orgName)" \
+                  "$(orgDisplayName)"
 
   - stage: Deploy
     displayName: "Deploy Management Group Hierarchy"
@@ -148,11 +150,11 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      az deployment tenant create \
-                        --name 'mg-hierarchy-$(Build.BuildNumber)' \
-                        --location $(deploymentLocation) \
-                        --template-file $(templateFile) \
-                        --parameters $(parametersFile) \
-                        --parameters tenantRootManagementGroupId=$(azureTenantId) \
-                        --parameters orgName="$(orgName)" \
-                        --parameters orgDisplayName="$(orgDisplayName)"
+                      bash $(scriptsPath)/mgh-deploy.sh \
+                        "mg-hierarchy-$(Build.BuildNumber)" \
+                        "$(templateFile)" \
+                        "$(parametersFile)" \
+                        "$(deploymentLocation)" \
+                        "$(azureTenantId)" \
+                        "$(orgName)" \
+                        "$(orgDisplayName)"

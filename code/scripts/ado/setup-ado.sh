@@ -3,8 +3,9 @@
 # Azure DevOps Setup - Complete ADO Configuration
 # =============================================================================
 # This script orchestrates the complete Azure DevOps setup by:
-#   1. Creating/updating all variable groups (via create-variable-groups.sh)
-#   2. Creating all deployment environments (via create-environments.sh)
+#   1. Creating the Platform Admin service principal (via create-platform-admin.sh)
+#   2. Creating/updating all variable groups (via create-variable-groups.sh)
+#   3. Creating all deployment environments (via create-environments.sh)
 #
 # This provides a single entry point for complete ADO setup.
 #
@@ -40,6 +41,7 @@ export AZURE_DEVOPS_EXT_PAT="${ADO_PAT_TOKEN}"
 # Scripts to run in order for complete ADO setup
 
 SETUP_SCRIPTS=(
+    "create-platform-admin.sh"
     "create-variable-groups.sh"
     "create-environments.sh"
 )
@@ -83,8 +85,26 @@ run_script() {
         return 1
     fi
     
+    # Scripts that don't support --dry-run mode
+    local scripts_without_dry_run=("create-platform-admin.sh")
+    
     if [[ "$dry_run" == "true" ]]; then
-        bash "$script_path" --dry-run
+        # Check if script supports dry-run
+        local supports_dry_run=true
+        for script in "${scripts_without_dry_run[@]}"; do
+            if [[ "$script_name" == "$script" ]]; then
+                supports_dry_run=false
+                break
+            fi
+        done
+        
+        if [[ "$supports_dry_run" == "false" ]]; then
+            log_warn "Script ${script_name} does not support --dry-run mode"
+            log_info "Running script normally (it is idempotent and checks for existing resources)"
+            bash "$script_path"
+        else
+            bash "$script_path" --dry-run
+        fi
     else
         bash "$script_path"
     fi
@@ -169,6 +189,7 @@ main() {
     echo "============================================================================="
     echo ""
     log_info "What was configured:"
+    echo "  - Platform Admin service principal for bootstrap operations"
     echo "  - Variable groups for pipeline configuration"
     echo "  - Deployment environments for pipeline stages"
     echo ""

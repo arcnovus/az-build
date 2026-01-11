@@ -21,6 +21,9 @@ targetScope = 'subscription'
 // CORE NAMING PARAMETERS
 // ============================================================================
 
+@description('Project name used in tagging conventions (e.g., monitoring, landing-zone)')
+param projectName string
+
 @description('The workload alias used in naming conventions (e.g., monitoring, hub, mngmnt)')
 param workloadAlias string
 
@@ -45,7 +48,7 @@ param location string = 'canadacentral'
 @maxValue(730)
 param dataRetention int = 60
 
-@description('The SKU for the Log Analytics workspace. Only PerGB2018 (Pay-As-You-Go) and CapacityReservation are supported. Free tier is deprecated and excluded.')
+@description('The SKU for the Log Analytics workspace.')
 @allowed([
   'PerGB2018'
   'CapacityReservation'
@@ -142,7 +145,7 @@ var actionGroupName = 'ag-${workloadAlias}-${actionGroupNameSuffix}-${environmen
 
 // Common tags for all resources
 var commonTags = {
-  Project: workloadAlias
+  Project: projectName
   Environment: environment
   Owner: owner
   ManagedBy: managedBy

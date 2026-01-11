@@ -41,6 +41,8 @@ variables:
     value: "$(bicepPath)/governance.bicep"
   - name: parametersFile
     value: "$(bicepPath)/governance.bicepparam"
+  - name: scriptsPath
+    value: "code/pipelines/governance"
   - name: deploymentName
     value: "governance-${{ parameters.environment }}-${{ parameters.locationCode }}-$(Build.BuildNumber)"
 
@@ -127,17 +129,17 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                az deployment mg validate \
-                  --management-group-id "${{ parameters.managementGroupId }}" \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  --parameters environment="${{ parameters.environment }}" \
-                  --parameters location="${{ parameters.location }}" \
-                  --parameters owner="${{ parameters.owner }}" \
-                  --parameters managedBy="${{ parameters.managedBy }}" \
-                  --parameters enableMCSB=${{ parameters.enableMCSB }} \
-                  --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}
+                bash $(scriptsPath)/gov-validate-deployment.sh \
+                  "${{ parameters.managementGroupId }}" \
+                  "$(templateFile)" \
+                  "$(parametersFile)" \
+                  "$(deploymentLocation)" \
+                  "${{ parameters.environment }}" \
+                  "${{ parameters.location }}" \
+                  "${{ parameters.owner }}" \
+                  "${{ parameters.managedBy }}" \
+                  "${{ parameters.enableMCSB }}" \
+                  "${{ parameters.enableCanadaPBMM }}"
 
   - stage: WhatIf
     displayName: "What-If Analysis"
@@ -162,17 +164,17 @@ stages:
               scriptType: "bash"
               scriptLocation: "inlineScript"
               inlineScript: |
-                az deployment mg what-if \
-                  --management-group-id "${{ parameters.managementGroupId }}" \
-                  --location $(deploymentLocation) \
-                  --template-file $(templateFile) \
-                  --parameters $(parametersFile) \
-                  --parameters environment="${{ parameters.environment }}" \
-                  --parameters location="${{ parameters.location }}" \
-                  --parameters owner="${{ parameters.owner }}" \
-                  --parameters managedBy="${{ parameters.managedBy }}" \
-                  --parameters enableMCSB=${{ parameters.enableMCSB }} \
-                  --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}
+                bash $(scriptsPath)/gov-whatif-deployment.sh \
+                  "${{ parameters.managementGroupId }}" \
+                  "$(templateFile)" \
+                  "$(parametersFile)" \
+                  "$(deploymentLocation)" \
+                  "${{ parameters.environment }}" \
+                  "${{ parameters.location }}" \
+                  "${{ parameters.owner }}" \
+                  "${{ parameters.managedBy }}" \
+                  "${{ parameters.enableMCSB }}" \
+                  "${{ parameters.enableCanadaPBMM }}"
 
   - stage: Deploy
     displayName: "Deploy Governance Policies"
@@ -203,15 +205,15 @@ stages:
                     scriptType: "bash"
                     scriptLocation: "inlineScript"
                     inlineScript: |
-                      az deployment mg create \
-                        --name "$(deploymentName)" \
-                        --management-group-id "${{ parameters.managementGroupId }}" \
-                        --location $(deploymentLocation) \
-                        --template-file $(templateFile) \
-                        --parameters $(parametersFile) \
-                        --parameters environment="${{ parameters.environment }}" \
-                        --parameters location="${{ parameters.location }}" \
-                        --parameters owner="${{ parameters.owner }}" \
-                        --parameters managedBy="${{ parameters.managedBy }}" \
-                        --parameters enableMCSB=${{ parameters.enableMCSB }} \
-                        --parameters enableCanadaPBMM=${{ parameters.enableCanadaPBMM }}
+                      bash $(scriptsPath)/gov-deploy.sh \
+                        "$(deploymentName)" \
+                        "${{ parameters.managementGroupId }}" \
+                        "$(templateFile)" \
+                        "$(parametersFile)" \
+                        "$(deploymentLocation)" \
+                        "${{ parameters.environment }}" \
+                        "${{ parameters.location }}" \
+                        "${{ parameters.owner }}" \
+                        "${{ parameters.managedBy }}" \
+                        "${{ parameters.enableMCSB }}" \
+                        "${{ parameters.enableCanadaPBMM }}"

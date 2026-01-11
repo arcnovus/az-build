@@ -15,6 +15,8 @@ using 'monitoring.bicep'
 // These identify the monitoring workload and follow naming conventions
 // ============================================================================
 
+param projectName = 'landing-zone'
+
 param workloadAlias = 'monitoring'
 
 param environment = 'live'

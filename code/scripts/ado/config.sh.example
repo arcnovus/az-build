@@ -21,6 +21,10 @@
 # Find via: az account show --query tenantId -o tsv
 export AAD_TENANT_ID=""
 
+# Platform Admin Service Principal name
+# This is the display name for the app registration and service principal (e.g., sp-landing-zone-admin)
+export PLATFORM_ADMIN_SP_NAME=""
+
 # =============================================================================
 # Azure DevOps Configuration
 # =============================================================================
