@@ -19,26 +19,18 @@ When creating or modifying Bicep scripts, you MUST follow these rules for Azure 
    - Pattern modules: `br/public:avm/ptn/<pattern-type>/<pattern-name>:<version>`
    - Example: `br/public:avm/res/storage/storage-account:1.0.0`
 
-## Version Selection from version.json
+## Version Selection from CHANGELOG.md
 
 4. **Always Use Latest Version**: When referencing an AVM, you MUST use the latest available version.
 
 5. **Finding the Latest Version**: To determine the latest version:
    - Navigate to the module's GitHub repository in the Azure/bicep-registry-modules organization
-   - Locate the `version.json` file in the module's directory
-   - Read the version number from the `version.json` file
+   - Locate the `CHANGELOG.md` file in the module's directory
+   - Read the latest version number from the `CHANGELOG.md` file
    - Use this version in the module reference
 
-6. **Version.json Format**: The `version.json` file typically contains:
-   ```json
-   {
-     "$schema": "https://aka.ms/bicep-registry-module-version-file-schema#",
-     "version": "1.0.0"
-   }
-   ```
-   Extract the `version` field value. Versions always need 3 parts. You may need to add the last part yourself, so if you see 1.0, that becomes 1.0.0. A missing last part always means it should be ".0".
 
-7. **Module Reference Format**: Always use the format:
+6. **Module Reference Format**: Always use the format:
    ```bicep
    module <moduleName> 'br/public:avm/<module-path>:<latest-version-from-version.json>' = {
      name: '<deployment-name>'
@@ -53,20 +45,20 @@ When creating or modifying Bicep scripts, you MUST follow these rules for Azure 
 8. **When Creating New Bicep Files**:
    - First, search the Azure Verified Modules repository (https://github.com/Azure/bicep-registry-modules) for an available module
    - If an AVM exists, use it instead of creating custom code
-   - Check the module's `version.json` file to get the latest version
-   - Reference the module using the latest version from `version.json`
+   - Check the module's ``CHANGELOG.md`` file to get the latest version
+   - Reference the module using the latest version from ``CHANGELOG.md``
 
 9. **When Updating Existing Bicep Files**:
    - Review existing module references
-   - Check if newer versions are available by comparing against the `version.json` file
+   - Check if newer versions are available by comparing against the ``CHANGELOG.md`` file
    - Update to the latest version if a newer one exists
 
 ## Examples
 
 **Correct Usage:**
 ```bicep
-// Latest version from version.json (e.g., 0.5.0)
-module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.0' = {
+// Latest version from `CHANGELOG.md`(e.g., 0.5.3)
+module subVending 'br/public:avm/ptn/lz/sub-vending:0.5.3' = {
   name: 'sub-vending-example'
   params: {
     subscriptionDisplayName: 'My Subscription'
@@ -91,6 +83,6 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 ## Verification
 
 10. **Before Committing**: Verify that:
-    - All AVM references use the latest version from `version.json`
+    - All AVM references use the latest version from ``CHANGELOG.md``
     - No custom code exists for resources that have available AVMs
     - Module paths follow the correct AVM structure
