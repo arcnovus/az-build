@@ -151,6 +151,10 @@ parameters:
     values:
       - Standard
       - Premium
+  - name: keyVaultAdminPrincipalId
+    displayName: "Key Vault Admin Principal ID (Object ID for Key Vault Administrator role)"
+    type: string
+    default: ""
   # Deployment Stack settings
   - name: denySettingsMode
     displayName: "Deny Settings Mode"
@@ -227,7 +231,8 @@ stages:
                   "${{ parameters.ipamPoolAddressSpace }}" \
                   "${{ parameters.ipamPoolDescription }}" \
                   "${{ parameters.vpnClientAddressPoolPrefix }}" \
-                  "${{ parameters.azureFirewallTier }}"
+                  "${{ parameters.azureFirewallTier }}" \
+                  "${{ parameters.keyVaultAdminPrincipalId }}"
 
   - stage: Preview
     displayName: "Preview Stack State"
@@ -314,4 +319,5 @@ stages:
                         "${{ parameters.ipamPoolAddressSpace }}" \
                         "${{ parameters.ipamPoolDescription }}" \
                         "${{ parameters.vpnClientAddressPoolPrefix }}" \
-                        "${{ parameters.azureFirewallTier }}"
+                        "${{ parameters.azureFirewallTier }}" \
+                        "${{ parameters.keyVaultAdminPrincipalId }}"

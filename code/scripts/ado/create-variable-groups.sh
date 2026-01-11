@@ -30,8 +30,8 @@ VARIABLE_GROUP_SCRIPTS=(
     "create-mg-hierarchy-variables.sh"
     "create-monitoring-variables.sh"
     "create-governance-variables.sh"
+    "create-hub-variables.sh"
     # Add additional variable group scripts here as needed:
-    # "create-hub-variables.sh"
     # "create-spoke-variables.sh"
 )
 

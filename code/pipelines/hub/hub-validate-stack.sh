@@ -35,7 +35,8 @@
 #     <ipamPoolAddressSpace> \
 #     <ipamPoolDescription> \
 #     <vpnClientAddressPoolPrefix> \
-#     <azureFirewallTier>
+#     <azureFirewallTier> \
+#     <keyVaultAdminPrincipalId>
 #
 # Exit codes:
 #   0 - Validation succeeded
@@ -73,6 +74,7 @@ IPAM_POOL_ADDRESS_SPACE="${26:-}"
 IPAM_POOL_DESCRIPTION="${27:-}"
 VPN_CLIENT_ADDRESS_POOL_PREFIX="${28:-}"
 AZURE_FIREWALL_TIER="${29:-}"
+KEY_VAULT_ADMIN_PRINCIPAL_ID="${30:-}"
 
 PARAMS=""
 if [ -n "$WORKLOAD_ALIAS" ]; then
@@ -128,6 +130,9 @@ if [ -n "$VPN_CLIENT_ADDRESS_POOL_PREFIX" ]; then
 fi
 if [ -n "$AZURE_FIREWALL_TIER" ]; then
   PARAMS="$PARAMS --parameters azureFirewallTier='$AZURE_FIREWALL_TIER'"
+fi
+if [ -n "$KEY_VAULT_ADMIN_PRINCIPAL_ID" ]; then
+  PARAMS="$PARAMS --parameters keyVaultAdminPrincipalId='$KEY_VAULT_ADMIN_PRINCIPAL_ID'"
 fi
 
 az stack sub validate \

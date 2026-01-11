@@ -175,6 +175,43 @@ export ACTION_GROUP_SMS_NUMBERS=""
 # - Security settings (publicNetworkAccess in monitoring.bicepparam)
 
 # =============================================================================
+# Hub Configuration (for hub-variables group)
+# =============================================================================
+# Note: Only STRING values go in variable groups. Stable configuration
+# (VNet address space, IPAM pool settings) is defined in bicepparam files.
+# Runtime values (environment, location, instance) are pipeline parameters.
+
+# Hub/Connectivity subscription ID - the subscription where hub resources are deployed
+# Set this after creating the connectivity subscription via subscription vending
+export HUB_SUBSCRIPTION_ID=""
+
+# Log Analytics Workspace Resource ID from monitoring infrastructure
+# Set this after deploying the monitoring infrastructure
+# Format: /subscriptions/{subId}/resourceGroups/{rgName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}
+export LOG_ANALYTICS_WORKSPACE_RESOURCE_ID=""
+
+# Organization-wide private DNS zone name
+# This is the internal DNS zone for your organization (e.g., internal.contoso.com)
+export PRIVATE_DNS_ZONE_NAME="internal.organization.com"
+
+# AVNM (Azure Virtual Network Manager) Management Group ID
+# This is the management group where AVNM will have scope for network management
+export AVNM_MANAGEMENT_GROUP_ID="mg-connectivity"
+
+# Key Vault Admin Principal ID (optional)
+# Object ID of the service principal or user to grant Key Vault Administrator role
+# Leave empty to skip Key Vault role assignment
+# Find via: az ad sp show --id "<appId>" --query id -o tsv
+export KEY_VAULT_ADMIN_PRINCIPAL_ID=""
+
+# Note: The following configurations have been moved to bicepparam files or pipeline parameters:
+# - Hub VNet address space (hubVnetAddressSpace in hub.bicepparam)
+# - IPAM pool settings (ipamPoolAddressSpace, ipamPoolDescription in hub.bicepparam)
+# - Optional resource flags (enableAppGatewayWAF, enableAzureFirewall, etc. as pipeline parameters)
+# - VPN configuration (vpnClientAddressPoolPrefix in hub.bicepparam)
+# - Azure Firewall tier (azureFirewallTier in hub.bicepparam)
+
+# =============================================================================
 # Environment Configuration (for ADO environments and pipeline validation)
 # =============================================================================
 # List of deployment environments to create in Azure DevOps

@@ -34,7 +34,7 @@ param location string = 'canadacentral'
 @description('The private DNS zone name for internal resources. (e.g. internal.organization.com)')
 param privateDnsZoneName string
 
-@description('The address space for the hub virtual network. (e.g. 10.0.0.0/16)')
+@description('The address space for the hub virtual network. Must be at least /18 to accommodate all subnets. Default /16 provides room for growth. Subnets are calculated as follows: GatewaySubnet /24 at index 0, AzureFirewallSubnet /24 at index 1, AppGatewaySubnet /24 at index 2, Management /24 at index 3, AzureBastionSubnet /26 at index 16, DnsResolverInbound /28 at index 80.')
 param hubVnetAddressSpace string = '10.0.0.0/16'
 
 @description('Resource ID of the Log Analytics Workspace from monitoring infrastructure')
@@ -71,7 +71,7 @@ param enableDnsResolver bool = false
 @description('Enable IPAM Pool for centralized IP address management')
 param enableIpamPool bool = false
 
-@description('The IP address range for the IPAM pool (e.g., 10.0.0.0/8 for large organizations)')
+@description('The IP address range for the IPAM pool. Must be a supernet that contains the hubVnetAddressSpace. (e.g., 10.0.0.0/8 for large organizations where hub uses 10.0.0.0/16)')
 param ipamPoolAddressSpace string = '10.0.0.0/8'
 
 @description('Description for the IPAM pool')
@@ -84,6 +84,9 @@ param vpnClientAddressPoolPrefix string = '172.16.0.0/24'
 @description('Azure Firewall SKU tier (Standard or Premium)')
 @allowed(['Standard', 'Premium'])
 param azureFirewallTier string = 'Standard'
+
+@description('Principal ID (Object ID) to grant Key Vault Administrator role. Leave empty to skip role assignment.')
+param keyVaultAdminPrincipalId string = ''
 
 // ============================================================================
 // VARIABLES
@@ -118,6 +121,12 @@ var commonTags = {
 }
 
 // Subnet configurations
+// Note: hubVnetAddressSpace must be at least /18 to support all subnet indices
+// cidrSubnet(base, newBits, netNum) calculates subnets based on the base address space
+// Example with 10.0.0.0/16:
+//   - /24 subnets: 256 available (indices 0-255)
+//   - /26 subnets: 1024 available (indices 0-1023)
+//   - /28 subnets: 4096 available (indices 0-4095)
 var gatewaySubnetPrefix = cidrSubnet(hubVnetAddressSpace, 24, 0) // 10.0.0.0/24
 var azureFirewallSubnetPrefix = cidrSubnet(hubVnetAddressSpace, 24, 1) // 10.0.1.0/24
 var appGatewaySubnetPrefix = cidrSubnet(hubVnetAddressSpace, 24, 2) // 10.0.2.0/24
@@ -164,6 +173,14 @@ module keyVault 'br/public:avm/res/key-vault/vault:0.13.0' = {
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
     sku: 'standard'
+    roleAssignments: !empty(keyVaultAdminPrincipalId)
+      ? [
+          {
+            principalId: keyVaultAdminPrincipalId
+            roleDefinitionIdOrName: 'Key Vault Administrator'
+          }
+        ]
+      : []
     diagnosticSettings: [
       {
         name: 'kv-diagnostics'
@@ -344,6 +361,8 @@ module hubVnetIpamAllocation './ipam-static-cidr.bicep' = if (enableIpamPool) {
 }
 
 // Link Private DNS Zone to Hub VNet
+// Note: Using the AVM module to add VNet links to the existing Private DNS Zone
+// This is a valid pattern as the AVM module supports incremental updates
 module privateDnsZoneVnetLink 'br/public:avm/res/network/private-dns-zone:0.8.0' = {
   name: 'deploy-privateDnsZone-vnetLink'
   scope: hubResourceGroup
@@ -520,7 +539,7 @@ module appGateway 'br/public:avm/res/network/application-gateway:0.7.0' = if (en
         name: 'appGatewayIpConfig'
         properties: {
           subnet: {
-            id: hubVnet.outputs.subnetResourceIds[2] // AppGatewaySubnet
+            id: '${hubVnet.outputs.resourceId}/subnets/AppGatewaySubnet'
           }
         }
       }
@@ -653,6 +672,8 @@ module appGateway 'br/public:avm/res/network/application-gateway:0.7.0' = if (en
 
 // ============================================================================
 // OPTIONAL: AZURE FRONT DOOR (Standard)
+// Note: Azure Front Door Standard/Premium uses the cdn/profile AVM module
+// (not network/front-door which is for classic Front Door)
 // ============================================================================
 
 module frontDoor 'br/public:avm/res/cdn/profile:0.8.0' = if (enableFrontDoor) {
@@ -817,8 +838,32 @@ output keyVaultUri string = keyVault.outputs.uri
 @description('The resource ID of the Private DNS Resolver (if enabled)')
 output dnsResolverResourceId string = enableDnsResolver ? dnsResolver.outputs.resourceId : ''
 
+@description('The name of the Private DNS Resolver (if enabled)')
+output dnsResolverName string = enableDnsResolver ? dnsResolver.outputs.name : ''
+
 @description('The resource ID of the IPAM Pool (if enabled)')
 output ipamPoolResourceId string = enableIpamPool ? ipamPool.outputs.resourceId : ''
 
 @description('The name of the IPAM Pool (if enabled)')
-output ipamPoolNameOutput string = enableIpamPool ? ipamPool.outputs.name : ''
+output ipamPoolName string = enableIpamPool ? ipamPool.outputs.name : ''
+
+@description('The name of the Network Watcher')
+output networkWatcherName string = networkWatcher.outputs.name
+
+@description('The name of the Azure Virtual Network Manager')
+output avnmName string = avnm.outputs.name
+
+@description('The name of the Application Gateway (if enabled)')
+output appGatewayName string = enableAppGatewayWAF ? appGateway.outputs.name : ''
+
+@description('The name of the Azure Front Door (if enabled)')
+output frontDoorName string = enableFrontDoor ? frontDoor.outputs.name : ''
+
+@description('The name of the VPN Gateway (if enabled)')
+output vpnGatewayName string = enableVpnGateway ? vpnGateway.outputs.name : ''
+
+@description('The name of the Azure Firewall (if enabled)')
+output azureFirewallName string = enableAzureFirewall ? azureFirewall.outputs.name : ''
+
+@description('The name of the DDoS Protection Plan (if enabled)')
+output ddosProtectionPlanName string = enableDDoSProtection ? ddosProtectionPlan.outputs.name : ''

@@ -71,3 +71,7 @@ param vpnClientAddressPoolPrefix = '172.16.0.0/24'
 
 // Azure Firewall SKU tier
 param azureFirewallTier = 'Standard'
+
+// Key Vault administrator principal ID (Object ID)
+// Provide during deployment to grant Key Vault Administrator role
+param keyVaultAdminPrincipalId = ''

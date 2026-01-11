@@ -278,16 +278,24 @@ The deployment provides these outputs:
 | `hubVnetSubnetResourceIds` | Array of subnet resource IDs |
 | `appGatewayResourceId` | Resource ID of Application Gateway (if enabled) |
 | `frontDoorResourceId` | Resource ID of Azure Front Door (if enabled) |
+| `frontDoorName` | Name of Azure Front Door (if enabled) |
 | `vpnGatewayResourceId` | Resource ID of VPN Gateway (if enabled) |
+| `vpnGatewayName` | Name of VPN Gateway (if enabled) |
 | `azureFirewallResourceId` | Resource ID of Azure Firewall (if enabled) |
+| `azureFirewallName` | Name of Azure Firewall (if enabled) |
 | `azureFirewallPrivateIp` | Private IP address of Azure Firewall (if enabled) |
 | `ddosProtectionPlanResourceId` | Resource ID of DDoS Protection Plan (if enabled) |
+| `ddosProtectionPlanName` | Name of DDoS Protection Plan (if enabled) |
 | `keyVaultName` | Name of the Key Vault |
 | `keyVaultResourceId` | Resource ID of the Key Vault |
 | `keyVaultUri` | URI of the Key Vault |
 | `dnsResolverResourceId` | Resource ID of Private DNS Resolver (if enabled) |
+| `dnsResolverName` | Name of Private DNS Resolver (if enabled) |
 | `ipamPoolResourceId` | Resource ID of IPAM Pool (if enabled) |
-| `ipamPoolNameOutput` | Name of the IPAM Pool (if enabled) |
+| `ipamPoolName` | Name of the IPAM Pool (if enabled) |
+| `networkWatcherName` | Name of the Network Watcher |
+| `avnmName` | Name of the Azure Virtual Network Manager |
+| `appGatewayName` | Name of the Application Gateway (if enabled) |
 
 ## Troubleshooting
 
