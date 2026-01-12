@@ -55,21 +55,22 @@ Establish the organizational structure and governance baseline for your Azure en
 
 ### Step 2: Governance (Policies)
 
-**Purpose**: Apply Azure Policies across the management group hierarchy for compliance and security standards.
+**Purpose**: Deploy Azure Policies in audit mode for compliance reporting and security visibility across the management group hierarchy.
 
 | Item | Details |
 |------|---------|
 | **Pipeline** | `governance-pipeline.yaml` |
 | **Scope** | Management Group |
 | **Prerequisites** | Step 1 completed |
-| **Output** | Policy assignments (MCSB, Canada PBMM, etc.) |
+| **Output** | Policy assignments (MCSB, Canada PBMM) in audit mode |
 
 **What Gets Created**:
-- Microsoft Cloud Security Benchmark (MCSB) policy assignment
-- Regulatory compliance policies (as configured)
-- Custom policy definitions and assignments
+- Microsoft Cloud Security Benchmark (MCSB) policy assignment (audit mode)
+- Canada Federal PBMM policy assignment (audit mode)
 
-📖 **Documentation**: Coming soon
+> **Note:** Policies are deployed in audit mode and are intended to remain that way. Use compliance data to identify gaps, then remediate through IaC pipelines. This keeps infrastructure changes centralized and prevents drift.
+
+📖 **Documentation**: [Governance](Governance.md)
 
 ---
 
@@ -260,6 +261,7 @@ See [RBAC Requirements](RBAC-Requirements.md) for detailed per-pipeline permissi
 
 ### Foundation
 - [Management Group Hierarchy](Management-Group-Hierarchy.md) - Structure and governance hierarchy
+- [Governance](Governance.md) - Azure Policy assignments for compliance and security
 
 ### Platform Infrastructure
 - [Monitoring Infrastructure](Monitoring-Infrastructure.md) - Centralized logging and monitoring
