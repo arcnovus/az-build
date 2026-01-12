@@ -79,6 +79,7 @@ Azure DevOps pipelines for infrastructure deployment:
 
 ## Documentation
 
+- **[Overview](docs/Overview.md)** - Deployment order, phases, and component dependencies
 - [RBAC Requirements](docs/RBAC-Requirements.md) - Complete guide to service principal permissions
 - [Management Group Hierarchy](docs/Management-Group-Hierarchy.md) - Creating and managing management groups
 - [Hub Infrastructure](docs/Hub-Infrastructure.md) - Hub networking setup

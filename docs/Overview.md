@@ -6,35 +6,24 @@ This documentation provides a complete guide to deploying and managing an Azure 
 
 The deployment follows a specific sequence to ensure dependencies are met. Each phase builds upon the previous one.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     PHASE 1: FOUNDATION                         │
-│  ┌───────────────────────┐    ┌───────────────────────────┐    │
-│  │  1. Management Group  │ → │  2. Governance (Policies) │    │
-│  │      Hierarchy        │    │                           │    │
-│  └───────────────────────┘    └───────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                                 ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                 PHASE 2: PLATFORM INFRASTRUCTURE                │
-│  ┌───────────────────────┐    ┌───────────────────────────┐    │
-│  │  3. Monitoring        │    │  4. Hub Infrastructure    │    │
-│  │     Infrastructure    │    │     (Connectivity)        │    │
-│  └───────────────────────┘    └───────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-                                 ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                 PHASE 3: WORKLOAD INFRASTRUCTURE                │
-│  ┌───────────────────────┐    ┌───────────────────────────┐    │
-│  │  5. Subscription      │ → │  6. Spoke Networking      │    │
-│  │     Vending           │    │                           │    │
-│  └───────────────────────┘    └───────────────────────────┘    │
-│                                           ↓                     │
-│                          ┌───────────────────────────┐          │
-│                          │  7. CloudOps (First       │          │
-│                          │     Workload)             │          │
-│                          └───────────────────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph phase1 [Phase 1: Foundation]
+        step1["1. Management Group Hierarchy"] --> step2["2. Governance - Policies"]
+    end
+
+    subgraph phase2 [Phase 2: Platform Infrastructure]
+        step3["3. Monitoring Infrastructure"]
+        step4["4. Hub Infrastructure - Connectivity"]
+    end
+
+    subgraph phase3 [Phase 3: Workload Infrastructure]
+        step5["5. Subscription Vending"] --> step6["6. Spoke Networking"]
+        step6 --> step7["7. CloudOps - First Workload"]
+    end
+
+    phase1 --> phase2
+    phase2 --> phase3
 ```
 
 ---
