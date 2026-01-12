@@ -350,20 +350,31 @@ environment_exists() {
     
     # Use REST API to list environments
     # API format: GET https://dev.azure.com/{organization}/{project}/_apis/distributedtask/environments
-    local error_output
     local json_output
-    error_output=$(az devops invoke \
+    local error_output
+    local exit_code
+    
+    # Capture stdout and stderr separately for Windows compatibility
+    json_output=$(az devops invoke \
         --area distributedtask \
         --resource environments \
         --route-parameters "project=${ADO_PROJECT_NAME}" \
         --org "${ADO_ORGANIZATION_URL}" \
         --api-version "7.0" \
         --http-method GET \
-        -o json 2>&1)
-    local exit_code=$?
+        -o json 2>/dev/null)
+    exit_code=$?
     
-    # If command failed, check if it's a permission issue
-    if [[ $exit_code -ne 0 ]]; then
+    # If command failed or no output, try to get error details
+    if [[ $exit_code -ne 0 ]] || [[ -z "$json_output" ]]; then
+        error_output=$(az devops invoke \
+            --area distributedtask \
+            --resource environments \
+            --route-parameters "project=${ADO_PROJECT_NAME}" \
+            --org "${ADO_ORGANIZATION_URL}" \
+            --api-version "7.0" \
+            --http-method GET \
+            -o json 2>&1)
         if echo "$error_output" | grep -qi "authentication\|unauthorized\|forbidden\|access denied"; then
             log_warn "Permission error checking for environment '${env_name}'"
             log_warn "This may indicate missing PAT permissions (Environment: Read & Manage)"
@@ -371,8 +382,14 @@ environment_exists() {
         return 1
     fi
     
+    # Validate JSON structure before parsing (Windows compatibility)
+    if ! echo "$json_output" | jq -e '.value' > /dev/null 2>&1; then
+        return 1
+    fi
+    
     # Check if environment name exists in the JSON response
-    if echo "$error_output" | jq -e --arg name "$env_name" '.value[] | select(.name == $name)' > /dev/null 2>&1; then
+    # Use exact string matching - ensure jq receives clean input
+    if echo "$json_output" | jq -e --arg name "$env_name" '.value[] | select(.name == $name)' > /dev/null 2>&1; then
         return 0
     else
         return 1
@@ -393,7 +410,8 @@ get_environment_id() {
         --http-method GET \
         -o json 2>/dev/null)
     
-    if [[ -n "$json_output" ]]; then
+    # Validate JSON structure before parsing (Windows compatibility)
+    if [[ -n "$json_output" ]] && echo "$json_output" | jq -e '.value' > /dev/null 2>&1; then
         echo "$json_output" | jq -r --arg name "$env_name" '.value[] | select(.name == $name) | .id' 2>/dev/null
     fi
 }
@@ -485,7 +503,7 @@ create_environment() {
         if [[ -n "$error_output" ]]; then
             echo ""
             log_info "Azure CLI error details:"
-            # Try to extract error message from JSON if it's JSON
+            # Try to extract error message from JSON if it's JSON (validate first for Windows compatibility)
             if echo "$error_output" | jq -e '.message' > /dev/null 2>&1; then
                 echo "$error_output" | jq -r '.message' | sed 's/^/  /'
             else
@@ -498,6 +516,13 @@ create_environment() {
     fi
     
     rm -f "$error_file"
+    
+    # Validate JSON structure before parsing (Windows compatibility)
+    if ! echo "$output" | jq -e '.id' > /dev/null 2>&1; then
+        log_error "Created environment but received invalid JSON response: ${env_name}"
+        log_info "Response was: ${output}"
+        return 1
+    fi
     
     # Extract environment ID from JSON response
     local env_id

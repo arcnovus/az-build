@@ -50,18 +50,32 @@ test_ado_permissions() {
     log_step "Testing Azure DevOps connection and permissions..."
     
     # Test basic connection by listing environments using REST API
+    local json_output
     local error_output
-    error_output=$(az devops invoke \
+    local exit_code
+    
+    # Capture stdout and stderr separately for Windows compatibility
+    json_output=$(az devops invoke \
         --area distributedtask \
         --resource environments \
         --route-parameters "project=${ADO_PROJECT_NAME}" \
         --org "${ADO_ORGANIZATION_URL}" \
         --api-version "7.0" \
         --http-method GET \
-        -o json 2>&1)
-    local exit_code=$?
+        -o json 2>/dev/null)
+    exit_code=$?
     
-    if [[ $exit_code -ne 0 ]]; then
+    if [[ $exit_code -ne 0 ]] || [[ -z "$json_output" ]]; then
+        # Re-run to capture full error output
+        error_output=$(az devops invoke \
+            --area distributedtask \
+            --resource environments \
+            --route-parameters "project=${ADO_PROJECT_NAME}" \
+            --org "${ADO_ORGANIZATION_URL}" \
+            --api-version "7.0" \
+            --http-method GET \
+            -o json 2>&1)
+        
         log_error "Failed to connect to Azure DevOps or list environments"
         echo ""
         
@@ -83,7 +97,7 @@ test_ado_permissions() {
             echo ""
         else
             log_info "Error details:"
-            # Try to extract error message from JSON if it's JSON
+            # Try to extract error message from JSON if it's JSON (validate first for Windows compatibility)
             if echo "$error_output" | jq -e '.message' > /dev/null 2>&1; then
                 echo "$error_output" | jq -r '.message' | sed 's/^/  /'
             else
@@ -92,6 +106,12 @@ test_ado_permissions() {
             echo ""
         fi
         
+        return 1
+    fi
+    
+    # Validate JSON structure (Windows compatibility)
+    if ! echo "$json_output" | jq -e '.value' > /dev/null 2>&1; then
+        log_error "Received invalid JSON response from Azure DevOps"
         return 1
     fi
     
@@ -184,6 +204,10 @@ list_environments() {
     echo ""
     
     local json_output
+    local error_output
+    local exit_code
+    
+    # Capture stdout and stderr separately for Windows compatibility
     json_output=$(az devops invoke \
         --area distributedtask \
         --resource environments \
@@ -191,13 +215,29 @@ list_environments() {
         --org "${ADO_ORGANIZATION_URL}" \
         --api-version "7.0" \
         --http-method GET \
-        -o json 2>&1)
+        -o json 2>/dev/null)
+    exit_code=$?
     
-    if [[ $? -eq 0 ]] && echo "$json_output" | jq -e '.value' > /dev/null 2>&1; then
+    # Validate JSON structure before parsing (Windows compatibility)
+    if [[ $exit_code -eq 0 ]] && [[ -n "$json_output" ]] && echo "$json_output" | jq -e '.value' > /dev/null 2>&1; then
         echo "$json_output" | jq -r '.value[] | "\(.name)\t\(.id)"' | column -t -s $'\t' -N "Name,ID"
     else
+        # Re-run to capture error output
+        error_output=$(az devops invoke \
+            --area distributedtask \
+            --resource environments \
+            --route-parameters "project=${ADO_PROJECT_NAME}" \
+            --org "${ADO_ORGANIZATION_URL}" \
+            --api-version "7.0" \
+            --http-method GET \
+            -o json 2>&1)
         log_error "Failed to list environments"
-        echo "$json_output" | jq -r '.message' 2>/dev/null || echo "$json_output"
+        # Try to extract error message from JSON if it's JSON (validate first for Windows compatibility)
+        if echo "$error_output" | jq -e '.message' > /dev/null 2>&1; then
+            echo "$error_output" | jq -r '.message'
+        else
+            echo "$error_output"
+        fi
     fi
 }
 
