@@ -84,8 +84,13 @@ param actionGroupSmsReceivers = []
 // Organization-wide defaults for monitoring alerts
 // ============================================================================
 
-// Enable or disable alert rule deployment
-param enableAlerts = true
+// Enable or disable alert rule deployment.
+// Disabled 2026-07: the three PT5M log-search alert rules cost ~CAD 6.23/mo
+// while law-monitoring-live-cac-001 ingests ~0 GB (nothing ships diagnostics
+// to it yet), so they could never fire meaningfully. The live rules were
+// disabled interactively the same day. Re-enable when the central workspace
+// actually receives data — and consider PT15M (1/3 the cost) when you do.
+param enableAlerts = false
 
 // Default alert severity (0=Critical, 1=Error, 2=Warning, 3=Informational, 4=Verbose)
 param alertSeverity = 2
